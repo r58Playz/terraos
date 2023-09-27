@@ -2,7 +2,7 @@
 
 set +x
 
-NOFRECON=1
+NOSCREENS=1
 MAIN_TTY="/dev/pts/0"
 DEBUG_TTY="/dev/pts/1"
 DATA_MNT="/mnt"
@@ -41,11 +41,12 @@ clear_tty() {
 }
 
 show_screen() {
-  if [[ "${NOFRECON}" == "1" ]]; then
+  if [[ "${NOSCREENS}" == "1" ]]; then
     clear_tty ${MAIN_TTY}
     echo "screen: ${1}"
-  ele
-    printf "\x1b]image:file=/assets/${1}.png"
+  else
+    clear_tty ${MAIN_TTY}
+    source "/assets/${1}"
   fi
 }
 
