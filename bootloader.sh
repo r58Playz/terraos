@@ -42,9 +42,9 @@ clear_tty() {
 
 show_screen() {
   if [[ "${NOFRECON}" == "1" ]]; then
-    clear
+    clear_tty ${MAIN_TTY}
     echo "screen: ${1}"
-  else
+  ele
     printf "\x1b]image:file=/assets/${1}.png"
   fi
 }
@@ -116,6 +116,12 @@ readinput() {
 action_boot() {
   log "booting..."
 
+  show_screen "ui/bootloader/copying"
+  mkdir /newroot
+  mount -t tmpfs -o size="$(get_from_conf rootfs_size)" none /newroot 
+
+  tar xf "${DATA_MNT}/$(get_from_conf rootfs_file)" -C /newroot
+
   BASE_MOUNTS="/sys /proc /dev"
   for mnt in $BASE_MOUNTS; do
     mkdir -p "/newroot$mnt"
@@ -123,12 +129,13 @@ action_boot() {
   done
   mkdir /newroot/initramfs
   pivot_root /newroot /newroot/initramfs
-  /bin/bash </dev/pts/2 >>/dev/pts/2 2>&1 &
   exec /sbin/init <"${DEBUG_TTY}" >>"${DEBUG_TTY}" 2>&1
 }
 
 action_bash() {
   log "opening bash..."
+  clear_tty ${MAIN_TTY}
+  /bash  
 }
 
 action_shutdown() {
