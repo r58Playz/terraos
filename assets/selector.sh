@@ -1,4 +1,6 @@
-source /assets/menu
+move_cursor() {
+  printf "\x1b[$(( 10 + $1 ));21f"
+}
 
 readinput() {
 	read -rsn1 mode
@@ -19,18 +21,40 @@ readinput() {
 }
 
 selectorLoop() {
+  maxopts=$1
+  shift
   selected=0
+  args=( "$@" )
   while true; do
+    clear
+    source assets/ui/menu
     idx=0
-    for opt; do
-      # TODO: move cursor
-      if [ $idx -eq $selected ]; then
-        echo -n "--> $(mapname $opt)"
+    lowerbound=$((selected - $maxopts))
+    upperbound=$((selected + $maxopts))
+    if [ $lowerbound -lt 0 ]; then upperbound=$(($upperbound + ${lowerbound#-})); lowerbound=0; fi
+    if [ $upperbound -gt $# ]; then upperbound=$#; fi
+    for i in $(seq $lowerbound $((upperbound - 1))); do
+      move_cursor $idx
+      if [ $i -eq $selected ]; then
+        echo -n "--> ${args[i]}"
       else
-        echo -n "    $(mapname $opt)"
+        echo -n "    ${args[i]}"
       fi
-      ((idx++))
+      idx=$((idx+1))
     done
+    if [ $(($upperbound - $lowerbound)) -lt $(($maxopts + $maxopts)) ]; then
+      if [ $(($maxopts + $maxopts)) -ne $# ]; then
+        for i in $(seq 0 $(($maxopts + $maxopts + $lowerbound - $upperbound - 1))); do
+          move_cursor $idx
+          echo -n ""
+          idx=$((idx+1))
+        done
+      fi
+    fi
+    idx=$((idx+1))
+    move_cursor $idx
+    echo -n "${lowerbound}-${upperbound} of $# items"
+    printf "\x1b[33;0f"
     input=$(readinput)
     case $input in
       'kB') exit ;;
@@ -46,6 +70,4 @@ selectorLoop() {
     esac
   done
 }
-
-
-selectorLoop $@
+selectorLoop 7 $@
