@@ -1,3 +1,5 @@
+source /assets/menu
+
 readinput() {
 	read -rsn1 mode
 
