@@ -75,7 +75,7 @@ find_root() {
 }
 
 get_from_conf() {
-  cat "${CONF_LOCATION}" | sed -e '/^#.*$/d' -e '/^$/d' | grep "${1}" | sed -e "s/${1}\\=\"//" -e 's/"$//'
+  cat "${2:-${CONF_LOCATION}}" | sed -e '/^#.*$/d' -e '/^$/d' | grep "${1}" | sed -e "s/${1}\\=\"//" -e 's/"$//'
 }
 
 ROOT_DEV="/"
@@ -114,15 +114,36 @@ readinput() {
 	esac
 }
 
-action_boot() {
-  log "booting..."
+action_boot_partition() {
+  log "booting from partition ${1}..."
+
+  show_screen "ui/bootloader/mounting"
+
+  mkdir /newroot
+
+  mount "${1}" /newroot
+
+  show_screen "ui/bootloader/booting"
+
+  boot_from_newroot 
+}
+
+action_boot_tar() {
+  log "booting from tar ${1}..."
 
   show_screen "ui/bootloader/copying"
+
   mkdir /newroot
-  mount -t tmpfs -o size="$(get_from_conf rootfs_size)" none /newroot 
+  mount -t tmpfs -o size="$(get_from_conf rootfs_size ${1}.conf)" none /newroot 
 
-  tar xf "${DATA_MNT}/$(get_from_conf rootfs_file)" -C /newroot
+  tar xf "${DATA_MNT}/${1}" -C /newroot
 
+  show_screen "ui/bootloader/booting"
+
+  boot_from_newroot
+}
+
+boot_from_newroot() {
   BASE_MOUNTS="/sys /proc /dev"
   for mnt in $BASE_MOUNTS; do
     mkdir -p "/newroot$mnt"
@@ -143,9 +164,17 @@ action_shutdown() {
   exit 0
 }
 
+action_boot_tar_selector() {
+  action_boot_tar $(bash /assets/selector.sh $(get_from_conf rootfs_files))
+}
+
+action_boot_partition_selector() {
+  action_boot_partition $(bash /assets/selector.sh $(cgpt find -t rootfs | tr '\n' ' '))
+}
+
 
 CURRENT_OPTION=0
-MAX_OPTIONS=3
+MAX_OPTIONS=4
 
 while 1; do
   show_screen "ui/options/${CURRENT_OPTION}"
@@ -165,12 +194,15 @@ while 1; do
     "kE")
       case "${CURRENT_OPTION}" in
         "0")
-          action_boot
+          action_boot_tar_selector
           ;;
         "1")
-          action_bash
+          action_boot_partition_selector
           ;;
         "2")
+          action_bash
+          ;;
+        "3")
           action_shutdown
           ;;
       esac
