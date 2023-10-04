@@ -35,10 +35,11 @@ selectorLoop() {
     if [ $upperbound -gt $# ]; then upperbound=$#; fi
     for i in $(seq $lowerbound $((upperbound - 1))); do
       move_cursor $idx
+      arg=$(echo ${args[i]} | sed 's/\(.\{49\}\).*/\1.../')
       if [ $i -eq $selected ]; then
-        echo -n "--> ${args[i]}"
+        echo -n "--> $arg"
       else
-        echo -n "    ${args[i]}"
+        echo -n "    $arg"
       fi
       idx=$((idx+1))
     done
