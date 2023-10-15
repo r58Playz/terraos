@@ -1,3 +1,6 @@
+exec 3>&1
+exec 1>&2
+
 move_cursor() {
   printf "\x1b[$(( 10 + $1 ));21f"
 }
@@ -58,8 +61,10 @@ selectorLoop() {
     printf "\x1b[33;0f"
     input=$(readinput)
     case $input in
-      'kB') exit ;;
-      'kE') return $selected ;;
+      'kB') printf -1 >&3;exit ;;
+      'kE') 
+        if [ $# -eq 0 ]; then printf -1 >&3;exit; else printf $selected >&3;exit; fi;
+        ;;
       'kU')
         ((selected--))
         if [ $selected -lt 0 ]; then selected=0; fi

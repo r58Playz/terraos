@@ -2,14 +2,14 @@
 
 set +x
 
-NOSCREENS=1
+NOSCREENS=0
 MAIN_TTY="/dev/pts/0"
 DEBUG_TTY="/dev/pts/1"
 DATA_MNT="/mnt"
 CONF_LOCATION="${DATA_MNT}/terra.conf"
 
 # sane i/o
-exec &>>"${MAIN_TTY}"
+exec >>"${MAIN_TTY}" 2>&1
 exec <"${MAIN_TTY}"
 
 logf() {
@@ -21,11 +21,11 @@ log() {
 }
 
 disable_input() {
-  printf '\x1b]input:off' >> "${1}"
+  printf '\x1b]input:off\a' >> "${1}"
 }
 
 enable_input() {
-  printf '\x1b]input:on' >> "${1}"
+  printf '\x1b]input:on\a' >> "${1}"
 }
 
 hide_input() {
@@ -80,9 +80,10 @@ get_from_conf() {
 
 ROOT_DEV="/"
 ROOT_NUM="2"
+DATA_NUM="1"
 
-disable_input "${MAIN_TTY}"
 disable_input "${DEBUG_TTY}"
+killall less script 
 
 show_screen "boot/root/searching"
 
@@ -94,7 +95,7 @@ find_root || (
 
 show_screen "boot/starting"
 
-mount "${ROOT_DEV}$(( ROOT_NUM + 2 ))" "${DATA_MNT}"
+mount "${ROOT_DEV}${DATA_NUM}" "${DATA_MNT}"
 
 readinput() {
 	read -rsn1 mode
@@ -121,7 +122,11 @@ action_boot_partition() {
 
   mkdir /newroot
 
-  mount "${1}" /newroot
+  mount "${1}" /newroot || (
+    show_screen "ui/bootloader/mount_failed"
+    sleep 1d
+    exit 1;
+  )
 
   show_screen "ui/bootloader/booting"
 
@@ -144,14 +149,18 @@ action_boot_tar() {
 }
 
 boot_from_newroot() {
+  enable_input "${MAIN_TTY}"
+  # we don't need data anymore - if we don't unmount pivot_root will fail
+  umount ${DATA_MNT}
+
   BASE_MOUNTS="/sys /proc /dev"
   for mnt in $BASE_MOUNTS; do
-    mkdir -p "/newroot$mnt"
-    mount -n -o move "$mnt" "/newroot$mnt"
+    umount -l $mnt
   done
-  mkdir /newroot/initramfs
-  pivot_root /newroot /newroot/initramfs
-  exec /sbin/init <"${DEBUG_TTY}" >>"${DEBUG_TTY}" 2>&1
+  # fuck pivot_root (systemd buggy) and switch_root (doesn't work for some odd reason), let's do it ourselves
+  cd /newroot
+  mount -o move . /
+  exec chroot . /bin/bash
 }
 
 action_bash() {
@@ -165,29 +174,48 @@ action_shutdown() {
 }
 
 action_boot_tar_selector() {
-  action_boot_tar $(bash /assets/selector.sh $(get_from_conf rootfs_files))
+  options=( "$(get_from_conf rootfs_files)" )
+  enable_input "${MAIN_TTY}"
+  selection=$(bash /assets/selector.sh "${options[*]}")
+  disable_input "${MAIN_TTY}"
+  if [ $selection -eq -1 ]; then
+    return;
+  fi
+  action_boot_tar ${options[$selection]}
 }
 
 action_boot_partition_selector() {
-  action_boot_partition $(bash /assets/selector.sh $(cgpt find -t rootfs | tr '\n' ' '))
+  options=( "$(cgpt find -t rootfs | tr '\n' ' ')" )
+  enable_input "${MAIN_TTY}"
+  selection=$(bash /assets/selector.sh "${options[*]}")
+  disable_input "${MAIN_TTY}"
+  if [ $selection -eq -1 ]; then
+    return;
+  fi
+  # bash quirk? idk why but i can't index the array with the var so i use awk instead
+  # awk starts at 1 not 0 i'm so dumb 
+  part=$(echo -n "${options[*]}" | awk "{printf \$$((selection+1))}")
+  action_boot_partition $part 
 }
 
 
 CURRENT_OPTION=0
 MAX_OPTIONS=4
-
-while 1; do
+while true; do
   show_screen "ui/options/${CURRENT_OPTION}"
-  case "$(readinput)" in
+  enable_input "${MAIN_TTY}"
+  action="$(readinput)"
+  disable_input "${MAIN_TTY}"
+  case $action in
     "kU")
       CURRENT_OPTION=$(( CURRENT_OPTION - 1 ))
-      if [[ "${CURRENT_OPTION}" == "-1" ]]; then
-        CURRENT_OPTION=$MAX_OPTIONS
+      if [[ "${CURRENT_OPTION}" -lt "0" ]]; then
+        CURRENT_OPTION=$((MAX_OPTIONS-1))
       fi
       ;;
     "kD")
       CURRENT_OPTION=$(( CURRENT_OPTION + 1 ))
-      if [[ "${CURRENT_OPTION}" == "${MAX_OPTIONS}" ]]; then
+      if [[ "${CURRENT_OPTION}" -ge "${MAX_OPTIONS}" ]]; then
         CURRENT_OPTION=0
       fi
       ;;
@@ -200,7 +228,9 @@ while 1; do
           action_boot_partition_selector
           ;;
         "2")
+          enable_input "${MAIN_TTY}"
           action_bash
+          disable_input "${MAIN_TTY}"
           ;;
         "3")
           action_shutdown
