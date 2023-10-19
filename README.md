@@ -9,7 +9,7 @@ The original rootfs of the RMA shim is already Linux, however it does not have f
 - Build and install `systemd-chromiumos` from the AUR
 - Make user `terraos`, give it sudo with no password perms
 - Create `kill-frecon.service`
-  ```ini
+```ini
 [Unit]
 Description=Tell frecon to kill itself
 
@@ -19,7 +19,7 @@ ExecStart=/usr/bin/killall frecon-lite
 
 [Install]
 WantedBy=basic.target
-  ```
+```
 - Enable `sddm`, `NetworkManager`, `kill-frecon`
 - Copy firmware from RMA shim
 - Copy modules from RMA shim
