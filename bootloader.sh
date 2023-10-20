@@ -158,9 +158,7 @@ boot_from_newroot() {
     umount -l $mnt
   done
   # fuck pivot_root (systemd buggy) and switch_root (doesn't work for some odd reason), let's do it ourselves
-  cd /newroot
-  mount -o move . /
-  exec chroot . /bin/bash
+  exec /myswitchroot
 }
 
 action_bash() {
@@ -174,7 +172,7 @@ action_shutdown() {
 }
 
 action_boot_tar_selector() {
-  options=( "$(get_from_conf rootfs_files)" )
+  options=( ${DATA_MNT}/*.tar.xz )
   enable_input "${MAIN_TTY}"
   selection=$(bash /assets/selector.sh "${options[*]}")
   disable_input "${MAIN_TTY}"
