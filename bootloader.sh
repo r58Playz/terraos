@@ -5,8 +5,6 @@ set +x
 NOSCREENS=0
 MAIN_TTY="/dev/pts/0"
 DEBUG_TTY="/dev/pts/1"
-DATA_MNT="/mnt"
-CONF_LOCATION="${DATA_MNT}/terra.conf"
 
 # sane i/o
 exec >>"${MAIN_TTY}" 2>&1
@@ -34,6 +32,14 @@ hide_input() {
 
 show_input() {
   printf '\x1b[?25h\x1b[28m' >> "${1}"
+}
+
+hide_cursor() {
+  printf '\x1b[?25l' >> "${1}"
+}
+
+show_cursor() {
+  printf '\x1b[?25h' >> "${1}"
 }
 
 clear_tty() {
@@ -74,13 +80,8 @@ find_root() {
   return 1
 }
 
-get_from_conf() {
-  cat "${2:-${CONF_LOCATION}}" | sed -e '/^#.*$/d' -e '/^$/d' | grep "${1}" | sed -e "s/${1}\\=\"//" -e 's/"$//'
-}
-
 ROOT_DEV="/"
 ROOT_NUM="2"
-DATA_NUM="1"
 
 disable_input "${DEBUG_TTY}"
 killall less script 
@@ -94,8 +95,6 @@ find_root || (
 )
 
 show_screen "boot/starting"
-
-mount "${ROOT_DEV}${DATA_NUM}" "${DATA_MNT}"
 
 readinput() {
 	read -rsn1 mode
@@ -133,25 +132,8 @@ action_boot_partition() {
   boot_from_newroot 
 }
 
-action_boot_tar() {
-  log "booting from tar ${1}..."
-
-  show_screen "ui/bootloader/copying"
-
-  mkdir /newroot
-  mount -t tmpfs -o size="$(get_from_conf rootfs_size ${1}.conf)" none /newroot 
-
-  tar xf "${DATA_MNT}/${1}" -C /newroot
-
-  show_screen "ui/bootloader/booting"
-
-  boot_from_newroot
-}
-
 boot_from_newroot() {
   enable_input "${MAIN_TTY}"
-  # we don't need data anymore - if we don't unmount pivot_root will fail
-  umount ${DATA_MNT}
 
   BASE_MOUNTS="/sys /proc /dev"
   for mnt in $BASE_MOUNTS; do
@@ -164,22 +146,13 @@ boot_from_newroot() {
 action_bash() {
   log "opening bash..."
   clear_tty ${MAIN_TTY}
-  /bash  
+  hide_cursor ${MAIN_TTY}
+  /bash -i
+  show_cursor ${MAIN_TTY}
 }
 
 action_shutdown() {
   exit 0
-}
-
-action_boot_tar_selector() {
-  options=( ${DATA_MNT}/*.tar.xz )
-  enable_input "${MAIN_TTY}"
-  selection=$(bash /assets/selector.sh "${options[*]}")
-  disable_input "${MAIN_TTY}"
-  if [ $selection -eq -1 ]; then
-    return;
-  fi
-  action_boot_tar ${options[$selection]}
 }
 
 action_boot_partition_selector() {
@@ -187,18 +160,17 @@ action_boot_partition_selector() {
   enable_input "${MAIN_TTY}"
   selection=$(bash /assets/selector.sh "${options[*]}")
   disable_input "${MAIN_TTY}"
-  if [ $selection -eq -1 ]; then
-    return;
+  if [[ $selection != 'exit' ]]; then
+    # bash quirk? idk why but i can't index the array with the var so i use awk instead
+    # awk starts at 1 not 0 i'm so dumb 
+    part=$(echo -n "${options[*]}" | awk "{printf \$$((selection+1))}")
+    action_boot_partition $part 
   fi
-  # bash quirk? idk why but i can't index the array with the var so i use awk instead
-  # awk starts at 1 not 0 i'm so dumb 
-  part=$(echo -n "${options[*]}" | awk "{printf \$$((selection+1))}")
-  action_boot_partition $part 
 }
 
 
 CURRENT_OPTION=0
-MAX_OPTIONS=4
+MAX_OPTIONS=3
 while true; do
   show_screen "ui/options/${CURRENT_OPTION}"
   enable_input "${MAIN_TTY}"
@@ -220,17 +192,14 @@ while true; do
     "kE")
       case "${CURRENT_OPTION}" in
         "0")
-          action_boot_tar_selector
-          ;;
-        "1")
           action_boot_partition_selector
           ;;
-        "2")
+        "1")
           enable_input "${MAIN_TTY}"
           action_bash
           disable_input "${MAIN_TTY}"
           ;;
-        "3")
+        "2")
           action_shutdown
           ;;
       esac

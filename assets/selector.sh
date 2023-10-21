@@ -61,9 +61,9 @@ selectorLoop() {
     printf "\x1b[33;0f"
     input=$(readinput)
     case $input in
-      'kB') printf -1 >&3;exit ;;
+      'kB') printf 'exit' >&3;exit ;;
       'kE') 
-        if [ $# -eq 0 ]; then printf -1 >&3;exit; else printf $selected >&3;exit; fi;
+        if [ $# -eq 0 ]; then printf 'exit' >&3;exit; else printf $selected >&3;exit; fi;
         ;;
       'kU')
         ((selected--))

@@ -4,6 +4,11 @@ Run "real" Linux on a RMA shim.
 ### But why is "real" in quotes?
 The original rootfs of the RMA shim is already Linux, however it does not have features such as WiFi, audio, and a graphical environment. TerraOS replaces the original rootfs with a "bootloader" that takes care of starting other rootfses with potentially different init systems as the initramfs passes flags to the init executable that only work on Upstart. As a result, you can freely customise the rootfs and use any init system.
 
+### FAQ
+**Where is my WiFi, audio, etc?!**
+
+Run `dmesg` and find the proper firmware for your board. Download it and manually add it to the rootfs. If you are using some exotic device it may not be in the RMA shim kernel. In that case you will have to compile the exact kernel version in the shim and then the module.
+
 ### How do I build the original TerraOS rootfs?
 - `sudo pacstrap -iK <path> base linux-firmware networkmanager network-manager-applet xfce4 xfce4-goodies lightdm-gtk-greeter pulseaudio pavucontrol alsa-utils sof-firmware mesa-amber firefox noto-fonts which sudo vim neofetch`
 - Build and install `systemd-chromiumos` from the AUR
@@ -24,4 +29,4 @@ WantedBy=basic.target
 - Copy firmware from RMA shim
 - Copy modules from RMA shim
 - Copy modprobe.d from board recovery image
-- Download iwlwifi-9000-pu-b0-jf-b0-41.ucode and place in firmware folder
+- Place any missing firmware files into the firmware folder (for octopus I included `iwlwifi-9000-pu-b0-jf-b0-41.ucode`)
