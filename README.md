@@ -1,15 +1,27 @@
 # terraOS
 Run "real" Linux on a RMA shim.
 
-### But why is "real" in quotes?
+## But why is "real" in quotes?
 The original rootfs of the RMA shim is already Linux, however it does not have features such as WiFi, audio, and a graphical environment. TerraOS replaces the original rootfs with a "bootloader" that takes care of starting other rootfses with potentially different init systems as the initramfs passes flags to the init executable that only work on Upstart. As a result, you can freely customise the rootfs and use any init system.
 
-### FAQ
+
+## How do I use it?
+- Clone this repository
+- Build the bootloader by running `sudo build.sh <input RMA shim> <output image path>`
+- Flash it to a USB
+- For each rootfs you want to use, do these steps:
+   - Create a new partition with type "ChromeOS rootfs" via fdisk or your favourite partitioning utility.
+   - Format the partition.
+   - Extract the tarball or bootstrap your rootfs as root into the root of the partition.
+   - Make sure the init program is at "/sbin/init" as that is the path that is executed.
+   - TerraOS will autodetect all partitions with type "ChromeOS rootfs" and display them in a list that you can boot from.
+
+## FAQ
 **Where is my WiFi, audio, etc?!**
 
 Run `dmesg` and find the proper firmware for your board. Download it and manually add it to the rootfs. If you are using some exotic device it may not be in the RMA shim kernel. In that case you will have to compile the exact kernel version in the shim and then the module.
 
-### How do I build the original TerraOS rootfs?
+## How do I build the TerraOS rootfs?
 ```
 sudo bash create_rootfs.sh <path> <shim> <board recovery image> <systemd-chromiumos.pkg.tar.zst> <systemd-chromiumos-libs.pkg.tar.zst> <systemd-chromiumos-sysvcompat.pkg.tar.zst>
 ```
