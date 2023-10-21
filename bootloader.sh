@@ -146,9 +146,9 @@ boot_from_newroot() {
 action_bash() {
   log "opening bash..."
   clear_tty ${MAIN_TTY}
-  hide_cursor ${MAIN_TTY}
-  /bash -i
   show_cursor ${MAIN_TTY}
+  setsid -c /bash -i
+  hide_cursor ${MAIN_TTY}
 }
 
 action_shutdown() {
