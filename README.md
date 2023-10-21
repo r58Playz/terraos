@@ -7,7 +7,7 @@ The original rootfs of the RMA shim is already Linux, however it does not have f
 
 ## How do I use it?
 - Clone this repository
-- Build the bootloader by running `sudo build.sh <input RMA shim> <output image path>`
+- Build the bootloader by running `sudo bash build.sh <input RMA shim> <output image path>`
 - Flash it to a USB
 - For each rootfs you want to use, do these steps:
    - Create a new partition with type "ChromeOS rootfs" via fdisk or your favourite partitioning utility.
