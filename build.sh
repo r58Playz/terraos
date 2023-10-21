@@ -55,11 +55,11 @@ echo "t"
 echo "3"
 echo "181"
 echo "w"
-) | fdisk ${OUT_DEV} > /dev/null
+) | fdisk ${OUT_DEV}
 
 dd if=$(get_partition ${SHIM_DEV} 2) of=$(get_partition ${OUT_DEV} 2)
-mkfs.ext4 $(get_partition ${OUT_DEV} 3) > /dev/null
-mkfs.ext4 $(get_partition ${OUT_DEV} 1) > /dev/null
+mkfs.ext4 $(get_partition ${OUT_DEV} 3)
+mkfs.ext4 $(get_partition ${OUT_DEV} 1)
 cgpt add -i 2 -S 1 -T 5 -P 10 -l kernel ${OUT_DEV} 
 
 mkdir mnt
