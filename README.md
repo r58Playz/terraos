@@ -6,19 +6,31 @@ The original rootfs of the RMA shim is already Linux, however it does not have f
 
 
 ## How do I use it?
-- Clone this repository
-- Build the bootloader by running `sudo bash build.sh <input RMA shim> <output image path>`
-- Flash it to a USB
+- Clone this repository.
+- Build the bootloader by running `sudo bash build.sh <input RMA shim> <output image path>`.
+- Flash it to a USB.
 - For each rootfs you want to use, do these steps:
    - Create a new partition with type "ChromeOS rootfs" via fdisk or your favourite partitioning utility.
    - Format the partition.
-   - Extract the tarball or bootstrap your rootfs as root into the root of the partition.
+   - Extract the tarball or bootstrap your rootfs as root into the root of the partition. To build the default rootfs, see [here](#how-do-i-build-the-terraos-rootfs).
    - Make sure the init program is at "/sbin/init" as that is the path that is executed.
-   - TerraOS will autodetect all partitions with type "ChromeOS rootfs" and display them in a list that you can boot from.
+   - TerraOS will autodetect all partitions on all GPT devices (including internal storage) with type "ChromeOS rootfs" and display them in a list that you can boot from.
 
 ## FAQ
-**Where is my WiFi, audio, etc?!**
+### What works on the default rootfs?
+- Systemd
+- Graphics
+- 3D Acceleration
+- Audio
+- WiFi
 
+### Can I use a different distro?
+Yes, you will need to either use a non-systemd distro or manually compile systemd with the [chromiumos patches](https://aur.archlinux.org/cgit/aur.git/tree/0002-Disable-mount_nofollow-for-ChromiumOS-kernels.patch?h=systemd-chromiumos). Then you can just follow the regular instructions and install your distro instead.
+
+### Can I use this without a USB in?
+Yes, you will need to create a "ChromeOS rootfs" partition on the internal storage and copy your rootfs there. In the future, there will be support for copying the filesystem to RAM.
+
+### Where is my WiFi, audio, etc?!
 Run `dmesg` and find the proper firmware for your board. Download it and manually add it to the rootfs. If you are using some exotic device it may not be in the RMA shim kernel. In that case you will have to compile the exact kernel version in the shim and then the module.
 
 ## How do I build the TerraOS rootfs?
