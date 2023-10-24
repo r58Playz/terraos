@@ -40,28 +40,12 @@ sudo bash create_rootfs.sh <path> <shim> <board recovery image> <systemd-chromiu
 
 Then you can add extra firmware such as the ones from the crowdsourced list of firmware needed for WiFi below.
 
-Manual instructions:
-
-- `sudo pacstrap -iK <path> base linux-firmware networkmanager network-manager-applet xfce4 xfce4-goodies lightdm-gtk-greeter pulseaudio pavucontrol alsa-utils sof-firmware mesa-amber firefox noto-fonts which sudo vim neofetch`
-- Build and install `systemd-chromiumos` from the AUR (ideally running makepkg on the host system and copying only the built packages to the rootfs)
-- Make user `terraos`, give it sudo with no password perms
-- Create `kill-frecon.service`
-```ini
-[Unit]
-Description=Tell frecon to kill itself
-
-[Service]
-Type=simple
-ExecStart=/usr/bin/killall frecon-lite
-
-[Install]
-WantedBy=basic.target
+To build systemd-chromiumos:
 ```
-- Enable `lightdm`, `NetworkManager`, `kill-frecon`
-- Copy firmware from RMA shim
-- Copy modules from RMA shim
-- Copy modprobe.d from board recovery image
-- Place any missing firmware files into the firmware folder (for octopus I included `iwlwifi-9000-pu-b0-jf-b0-41.ucode`)
+git clone https://aur.archlinux.org/systemd-chromiumos
+cd systemd-chromiumos
+makepkg -Cs --skipinteg --nocheck
+```
 
 `sudo tar cajvf ../<filename> *` seems to create a sane tarball of the generated rootfses.
 
