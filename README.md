@@ -12,7 +12,7 @@ The original rootfs of the RMA shim is already Linux, however it does not have f
 - For each rootfs you want to use, do these steps:
    - Create a new partition with type "ChromeOS rootfs" via fdisk or your favourite partitioning utility.
    - Format the partition.
-   - Extract the tarball or bootstrap your rootfs as root into the root of the partition. To build the default rootfs, see [here](#how-do-i-build-the-terraos-rootfs).
+   - Extract the tarball or bootstrap your rootfs as root into the root of the partition. If you are using `cp`, **make sure to use the `a` flag to preserve permissions and users**. To build the default rootfs, see [here](#how-do-i-build-the-terraos-rootfs).
    - Make sure the init program is at "/sbin/init" as that is the path that is executed.
    - TerraOS will autodetect all partitions on all GPT devices (including internal storage) with type "ChromeOS rootfs" and display them in a list that you can boot from.
 
