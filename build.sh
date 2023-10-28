@@ -19,6 +19,10 @@ if ! which cgpt >/dev/null 2>/dev/null; then
   die "this program requires cgpt"
 fi
 
+if test ! -f "${1}" && test -b "${1}"; then
+  die "passing block devices to this script is unsupported"
+fi
+
 
 get_partition() {
   echo -n "${1}p${2}"
@@ -46,14 +50,14 @@ echo "4096"
 echo "+32M"
 echo "t"
 echo "2"
-echo "180"
+echo "fe3a2a5d-4f32-41a7-b725-accc3285a309"
 echo "n"
 echo "3"
 echo ""
 echo ""
 echo "t"
 echo "3"
-echo "181"
+echo "3cb8e202-3b7e-47dd-8a3c-7ff2a13cfcec"
 echo "w"
 ) | fdisk ${OUT_DEV}
 
