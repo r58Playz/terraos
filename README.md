@@ -34,6 +34,7 @@ Yes, you will need to create a "ChromeOS rootfs" partition on the internal stora
 Run `dmesg` and find the proper firmware for your board. Download it and manually add it to the rootfs. If you are using some exotic device it may not be in the RMA shim kernel. In that case you will have to compile the exact kernel version in the shim and then the module.
 
 ## How do I build the TerraOS rootfs?
+**The password for the `terraos` user is `terraos`.**
 ```
 sudo bash create_rootfs.sh <path> <shim> <board recovery image> <systemd-chromiumos.pkg.tar.zst> <systemd-chromiumos-libs.pkg.tar.zst> <systemd-chromiumos-sysvcompat.pkg.tar.zst>
 ```
