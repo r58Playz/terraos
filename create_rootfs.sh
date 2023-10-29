@@ -83,7 +83,7 @@ umount mnt || die "failed to unmount recovery image"
 
 losetup -d ${RECO_DEV} || die "failed to remove recovery image loop device"
 
-rm -r mnt || die "failed to create temporary mountpoint"
+rm -r mnt || die "failed to remove temporary mountpoint"
 
 umount "${1}" || die "failed to unmount root bindmount"
 
