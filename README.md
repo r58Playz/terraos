@@ -36,7 +36,7 @@ Run `dmesg` and find the proper firmware for your board. Download it and manuall
 ## How do I build the TerraOS rootfs?
 **The password for the `terraos` user is `terraos`.**
 ```
-sudo bash create_rootfs.sh <path> <shim> <board recovery image> <systemd-chromiumos.pkg.tar.zst> <systemd-chromiumos-libs.pkg.tar.zst> <systemd-chromiumos-sysvcompat.pkg.tar.zst>
+sudo bash create_rootfs.sh <rootfs path - needs to be empty> <shim> <board recovery image> <systemd-chromiumos.pkg.tar.zst> <systemd-chromiumos-libs.pkg.tar.zst> <systemd-chromiumos-sysvcompat.pkg.tar.zst>
 ```
 
 Then you can add extra firmware such as the ones from the crowdsourced list of firmware needed for WiFi below.
