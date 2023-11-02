@@ -20,11 +20,12 @@ The original rootfs of the RMA shim is already Linux, however it does not have f
 
 ## FAQ
 ### What works on the default rootfs?
+`make_rootfs.sh` copies firmware and modules from the RMA shim and ALSA kernel module configurations from the recovery image, so most if not all features should work out of the box. If features do not work, see [here](#crowdsourced-list-of-compatibility).
 - Systemd
 - Graphics
 - 3D Acceleration
-- Audio
-- WiFi
+- Audio (this is board dependent)
+- WiFi (this is board dependent)
 
 ### Can I use a different distro?
 Yes, you will need to either use a non-systemd distro or manually compile systemd with the [chromiumos patches](https://aur.archlinux.org/cgit/aur.git/tree/0002-Disable-mount_nofollow-for-ChromiumOS-kernels.patch?h=systemd-chromiumos). Then you can just follow the regular instructions and install your distro instead.
@@ -59,8 +60,8 @@ makepkg -Cs --skipinteg --nocheck
 - Move `/init` to `/sbin/init`
 - Edit it so it instead runs `exec /bootloader.sh` after `setup_environment` in the `main` function
 
-## Crowdsourced list of firmware needed for WiFi
-If you get WiFi working on your TerraOS install, check here to make sure someone hasn't already posted instructions for your board and make a PR modifying this section of the README.
+## Crowdsourced list of compatibility
+If you get all features working on your TerraOS install, check here to make sure someone hasn't already posted data for your board and make a PR modifying this README.
 
 ### Octopus
-Download `iwlwifi-9000-pu-b0-jf-b0-41.ucode` and place into firmware folder.
+All features except for WiFi work out of the box, except for WiFi. To fix WiFi, download `iwlwifi-9000-pu-b0-jf-b0-41.ucode` and place into firmware folder.
