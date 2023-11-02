@@ -9,7 +9,9 @@ The original rootfs of the RMA shim is already Linux, however it does not have f
 - Clone this repository.
 - Build the bootloader by running `sudo bash build.sh <input RMA shim> <output image path>`.
 - Flash it to a USB.
-- For each rootfs you want to use, do these steps:
+- If you want to boot from squashfs, expand the 1st partition.
+- Copy all squashfses you want to boot from into the 1st partition.
+- For each rootfs you want to use with persistence, do these steps:
    - Create a new partition with type "ChromeOS rootfs" via fdisk or your favourite partitioning utility.
    - Format the partition.
    - Extract the tarball or bootstrap your rootfs as root into the root of the partition. If you are using `cp`, **make sure to use the `a` flag to preserve permissions and users**. To build the default rootfs, see [here](#how-do-i-build-the-terraos-rootfs).
@@ -49,6 +51,7 @@ makepkg -Cs --skipinteg --nocheck
 ```
 
 `sudo tar cajvf ../<filename> *` seems to create a sane tarball of the generated rootfses.
+`sudo mksquashfs * ../<filename> -comp gzip` creates a squashfs image of the generated rootfs.
 
 
 ## How do I build terrastage1.tar.zst?

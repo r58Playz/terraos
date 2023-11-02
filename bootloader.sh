@@ -94,6 +94,15 @@ find_root || (
   exit 1
 )
 
+show_screen "boot/mounting"
+
+mkdir /data
+mount "${ROOT_DEV}1" /data || (
+  show_screen "boot/mount_failed"
+  sleep 1d
+  exit 1
+)
+
 show_screen "boot/starting"
 
 readinput() {
@@ -132,10 +141,40 @@ action_boot_partition() {
   boot_from_newroot 
 }
 
+action_boot_squash() {
+  log "booting from squashfs ${1}..."
+  
+  show_screen "ui/bootloader/copying"
+
+  mkdir /newroot
+  mkdir /squashfs
+
+  mount "${1}" /squashfs
+
+  SQUASHFS_SIZE=$(du -sm /squashfs | cut -f 1)
+  PV_SIZE=$(( SQUASHFS_SIZE * 1024 * 1024 ))
+  SQUASHFS_SIZE=$(( SQUASHFS_SIZE + 256 ))
+
+  log "tmpfs size: ${SQUASHFS_SIZE}M"
+  log "pv size: ${PV_SIZE}"
+
+  mount -t tmpfs -o size="${SQUASHFS_SIZE}M" tmpfs /newroot 
+
+  tar -cf - -C /squashfs . | pv -f -s "${PV_SIZE}" -w 96 | tar -xf - -C /newroot
+
+  umount /squashfs
+
+  show_screen "ui/bootloader/booting"
+
+  boot_from_newroot
+}
+
 boot_from_newroot() {
   enable_input "${MAIN_TTY}"
 
-  BASE_MOUNTS="/sys /proc /dev"
+  umount /data
+
+  BASE_MOUNTS="/sys /dev /proc"
   for mnt in $BASE_MOUNTS; do
     umount -l $mnt
   done
@@ -152,7 +191,21 @@ action_bash() {
 }
 
 action_shutdown() {
-  exit 0
+  reboot -f
+  sleep 1d
+}
+
+action_boot_squash_selector() {
+  options=( /data/*.squashfs )
+  enable_input "${MAIN_TTY}"
+  selection=$(bash /assets/selector.sh "${options[*]}")
+  disable_input "${MAIN_TTY}"
+  if [[ $selection != 'exit' ]]; then
+    # bash quirk? idk why but i can't index the array with the var so i use awk instead
+    # awk starts at 1 not 0 i'm so dumb 
+    squash=$(echo -n "${options[*]}" | awk "{printf \$$((selection+1))}")
+    action_boot_squash "${squash}"
+  fi
 }
 
 action_boot_partition_selector() {
@@ -164,13 +217,12 @@ action_boot_partition_selector() {
     # bash quirk? idk why but i can't index the array with the var so i use awk instead
     # awk starts at 1 not 0 i'm so dumb 
     part=$(echo -n "${options[*]}" | awk "{printf \$$((selection+1))}")
-    action_boot_partition $part 
+    action_boot_partition "${part}" 
   fi
 }
 
-
 CURRENT_OPTION=0
-MAX_OPTIONS=3
+MAX_OPTIONS=4
 while true; do
   show_screen "ui/options/${CURRENT_OPTION}"
   enable_input "${MAIN_TTY}"
@@ -192,16 +244,18 @@ while true; do
     "kE")
       case "${CURRENT_OPTION}" in
         "0")
-          action_boot_partition_selector
+          action_boot_squash_selector
           ;;
         "1")
+          action_boot_partition_selector
+          ;;
+        "2")
           enable_input "${MAIN_TTY}"
           action_bash
           disable_input "${MAIN_TTY}"
           ;;
-        "2")
+	"3")
           action_shutdown
-          ;;
       esac
       ;;
   esac

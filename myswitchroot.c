@@ -35,13 +35,17 @@ void xexecv(const char *path, char *const argv[]) {
   }
 }
 
-int main() {
-  printf("right uhh um i'm gonna have to hack the shim. technical. uhmm you'll need to turn around while i do this.\nturn around, i'll only be a second. if you would mind.\nwould you mind uhh putting your back towards me so i can see only your back\ngo on just turn right the way around so you're not looking at me\n");
+int main(int argc, char *argv[]) {
+  if(argc>1) {
+    printf("right uhh um i'm gonna have to hack the shim. technical. uhmm you'll need to turn around while i do this.\nturn around, i'll only be a second. if you would mind.\nwould you mind uhh putting your back towards me so i can see only your back\ngo on just turn right the way around so you're not looking at me\n");
+  }
   xchdir("/newroot");
   pivot_root(".",".");
   xumount2(".", MNT_DETACH);
-  printf("done! hacked.\n");
-  char *argv[] = { "/sbin/init", NULL };
-  xexecv(argv[0], argv);
+  if(argc>1) {
+    printf("done! hacked.\n");
+  }
+  char *cmd[] = { "/sbin/init", NULL };
+  xexecv(cmd[0], cmd);
   return 0;
 }

@@ -97,6 +97,7 @@ EOT
 arch-chroot "${1}" systemctl enable NetworkManager lightdm kill-frecon || die "failed to enable services"
 
 lsof -t +D "${1}" 2>/dev/null | xargs kill -9 
+rm -rf "${1}/etc/pacman.d/gnupg/S.*"
 
 umount -R "${1}" || die "failed to unmount root bindmount"
 

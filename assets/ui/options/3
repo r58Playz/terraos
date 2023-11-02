@@ -12,8 +12,8 @@ cat << EOT
 #                #############################################################                 #
 #                #      Boot from a squashfs                                 #                 #
 #                #      Boot from a partition                                #                 #
-#                #  --> Open a bash shell                                    #                 #
-#                #      Shut down                                            #                 #
+#                #      Open a bash shell                                    #                 #
+#                #  --> Shut down                                            #                 #
 #                #                                                           #                 #
 #                #                                                           #                 #
 #                #                                                           #                 #
