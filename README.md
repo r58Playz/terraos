@@ -54,6 +54,12 @@ makepkg -Cs --skipinteg --nocheck
 `sudo tar cajvf ../<filename> *` seems to create a sane tarball of the generated rootfses.
 `sudo mksquashfs * ../<filename> -comp gzip` creates a squashfs image of the generated rootfs.
 
+## How do I build ChromeOS for TerraOS?
+```
+sudo bash create_cros_persistent.sh <reven_recovery> <cros_recovery> <rma_shim> <path_to_image> 
+```
+The `path_to_image` must be a path to a file.
+
 
 ## How do I build terrastage1.tar.zst?
 - Extract the shim kernel with binwalk until you get to the cpio archive.
@@ -64,4 +70,4 @@ makepkg -Cs --skipinteg --nocheck
 If you get all features working on your TerraOS install, check here to make sure someone hasn't already posted data for your board and make a PR modifying this README.
 
 ### Octopus
-All features except for WiFi work out of the box, except for WiFi. To fix WiFi, download `iwlwifi-9000-pu-b0-jf-b0-41.ucode` and place into firmware folder.
+All features work out of the box. Update your TerraOS rootfs, since this was fixed in a newer version.
