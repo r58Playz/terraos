@@ -174,10 +174,21 @@ boot_from_newroot() {
 
   umount /data
 
-  BASE_MOUNTS="/sys /dev /proc"
-  for mnt in $BASE_MOUNTS; do
+  local mounts="/sys"
+
+  if cat /newroot/etc/lsb-release 2>/dev/null | grep -i chromeos >/dev/null 2>/dev/null; then
+    mounts="$mounts /proc"
+    mount -o move /dev /newroot/dev
+  else
+    mounts="$mounts /dev /proc"
+  fi
+
+  # no dev after this point
+
+  for mnt in $mounts; do
     umount -l $mnt
   done
+
   # fuck pivot_root (systemd buggy) and switch_root (doesn't work for some odd reason), let's do it ourselves
   exec /myswitchroot
 }
@@ -210,6 +221,8 @@ action_boot_squash_selector() {
 
 action_boot_partition_selector() {
   options=( "$(cgpt find -t rootfs | tr '\n' ' ')" )
+  local root_part="${ROOT_DEV}3"
+  options=("${options[@]/$root_part}")
   enable_input "${MAIN_TTY}"
   selection=$(bash /assets/selector.sh "${options[*]}")
   disable_input "${MAIN_TTY}"

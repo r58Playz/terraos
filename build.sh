@@ -19,6 +19,10 @@ if ! which cgpt >/dev/null 2>/dev/null; then
   die "this program requires cgpt"
 fi
 
+if ! which truncate >/dev/null 2>/dev/null; then
+  die "this program requires truncate"
+fi
+
 if test ! -f "${1}" && test -b "${1}"; then
   die "passing block devices to this script is unsupported"
 fi
@@ -32,6 +36,7 @@ SHIM_PATH="${1}"
 OUT_PATH="${2}"
 OUT_SIZE="64M"
 
+rm ${OUT_PATH}
 touch ${OUT_PATH}
 truncate -s ${OUT_SIZE} ${OUT_PATH}
 

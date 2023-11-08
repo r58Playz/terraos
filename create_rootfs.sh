@@ -106,8 +106,8 @@ SHIM_DEV=$(losetup -Pf --show "${2}")
 mkdir mnt || die "failed to create temporary mountpoint"
 
 mount "${SHIM_DEV}p3" -o ro mnt || die "failed to mount shim"
-cp -a mnt/lib/firmware "${1}/lib/" || die "failed to copy firmware"
 cp -a mnt/lib/modules  "${1}/lib/" || die "failed to copy modules"
+sync
 umount -f mnt || die "failed to unmount shim"
 
 losetup -d ${SHIM_DEV} || die "failed to remove shim loop device"
@@ -116,7 +116,12 @@ RECO_DEV=$(losetup -Pf --show "${3}")
 
 mount "${RECO_DEV}p3" -o ro mnt || die "failed to mount recovery image"
 cp -a mnt/etc/modprobe.d/alsa* "${1}/etc/modprobe.d/" || die "failed to copy alsa drivers"
+sync
 umount -f mnt || die "failed to unmount recovery image"
+
+git clone https://chromium.googlesource.com/chromiumos/third_party/linux-firmware fw --depth=1 -b master || die "failed to clone firmware"
+cp -r fw/* "${1}/lib/firmware/" || die "failed to copy firmware"
+rm -r fw || die "failed to remove firmware"
 
 losetup -d ${RECO_DEV} || die "failed to remove recovery image loop device"
 
