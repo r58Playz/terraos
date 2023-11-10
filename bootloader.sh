@@ -82,7 +82,7 @@ find_root() {
     root_dev="${kern_dev%${kern_num}}"
     if [ -b "$root_dev" ]; then
       ROOT_DEV="$root_dev"
-      ROOT_NUM="$kern_num"
+      ROOT_NUM="$((kern_num+1))"
       log "found: ${USB_DEV}"
       return 0
     fi
@@ -241,8 +241,9 @@ action_boot_squash_selector() {
 
 action_boot_partition_selector() {
   options=( "$(find_usable_roots | tr '\n' ' ')" )
-  local root_part="${ROOT_DEV}3"
-  options=("${options[@]/$root_part}")
+  local root_part="${ROOT_DEV}${ROOT_NUM}"
+  # using ^[ as the sed separator as that's an invalid character for both the path and GPT name
+  options=( "$(echo "${options[*]}" | sed "s${root_part}:\S* " | sed "s${root_part} ")" )
   enable_input "${MAIN_TTY}"
   selection=$(bash /assets/selector.sh "${options[*]}")
   disable_input "${MAIN_TTY}"

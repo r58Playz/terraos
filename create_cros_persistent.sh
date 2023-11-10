@@ -21,6 +21,10 @@ if [ $# -le 2 ]; then
 fi
 
 if [ $# -le 3 ]; then
+  die "you must pass a terraos bootloader"
+fi
+
+if [ $# -le 4 ]; then
   die "you must pass an output image path"
 fi
 
@@ -36,7 +40,11 @@ if test ! -f "${3}"; then
   die "${3}: no such file"
 fi
 
-if test ! -f "${4}" && test -b "${3}"; then
+if test ! -f "${4}"; then
+  die "${3}: no such file"
+fi
+
+if test ! -f "${5}" && test -b "${5}"; then
   die "passing block devices to this script is unsupported"
 fi
 
@@ -48,15 +56,15 @@ if ! which truncate >/dev/null 2>/dev/null; then
   die "this program requires truncate"
 fi
 
-rm "${4}"
-touch "${4}"
-truncate -s 4G "${4}"
+rm "${5}"
+touch "${5}"
+truncate -s 5G "${5}"
 
 ROOT_DEV=$(losetup -Pf --show "${1}")
 RECO_DEV=$(losetup -Pf --show "${2}")
 SHIM_DEV=$(losetup -Pf --show "${3}")
-OUT_DEV=$(losetup -Pf --show "${4}")
-
+BOOTLOADER_DEV=$(losetup -Pf --show "${4}")
+OUT_DEV=$(losetup -Pf --show "${5}")
 
 (
 echo "g"
@@ -67,11 +75,11 @@ echo "+1"
 echo "n"
 echo "4"
 echo ""
-echo "+1"
+echo "+32M"
 echo "n"
 echo "5"
 echo ""
-echo "+1"
+echo "+48M"
 echo "n"
 echo "6"
 echo ""
@@ -112,12 +120,24 @@ echo ""
 echo "t"
 echo "3"
 echo "3cb8e202-3b7e-47dd-8a3c-7ff2a13cfcec"
+echo "t"
+echo "4"
+echo "fe3a2a5d-4f32-41a7-b725-accc3285a309"
+echo "t"
+echo "5"
+echo "3cb8e202-3b7e-47dd-8a3c-7ff2a13cfcec"
 echo "w"
 ) | fdisk "${OUT_DEV}"
 
 mkfs.ext4 "${OUT_DEV}p1"
 
 dd if="${ROOT_DEV}p3" of="${OUT_DEV}p3" status=progress
+
+dd if="${BOOTLOADER_DEV}p2" of="${OUT_DEV}p4" status=progress
+dd if="${BOOTLOADER_DEV}p3" of="${OUT_DEV}p5" status=progress
+
+cgpt add -i 4 -S 1 -T 5 -P 10 -l kernel ${OUT_DEV} 
+cgpt add -i 3 -l terra_chromeos ${OUT_DEV}
 
 printf '\000' | sudo dd of="${OUT_DEV}p3" seek=$((0x464 + 3)) conv=notrunc count=1 bs=1
 
@@ -151,11 +171,17 @@ cp -r fw/* mnt/dst/lib/firmware/
 rm -r fw
 sync
 umount mnt/dst
+mount "${OUT_DEV}p1" mnt/dst
+mkdir -p mnt/dst/dev_image/etc/
+touch mnt/dst/dev_image/etc/lsb-factory
+sync
+umount mnt/dst
 
 rm -r mnt
 
 losetup -d ${ROOT_DEV}
 losetup -d ${RECO_DEV}
 losetup -d ${SHIM_DEV}
+losetup -d ${BOOTLOADER_DEV}
 losetup -d ${OUT_DEV}
 

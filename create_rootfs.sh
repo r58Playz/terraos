@@ -107,6 +107,7 @@ mkdir mnt || die "failed to create temporary mountpoint"
 
 mount "${SHIM_DEV}p3" -o ro mnt || die "failed to mount shim"
 cp -a mnt/lib/modules  "${1}/lib/" || die "failed to copy modules"
+cp -a mnt/lib/firmware "${1}/lib/" || die "failed to copy firmware from shim"
 sync
 umount -f mnt || die "failed to unmount shim"
 
