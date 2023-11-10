@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
   if(argc>1) {
     printf("done! hacked.\n");
   }
-  char *cmd[] = { "/sbin/init", NULL };
+  char *cmd[] = { argc<2?"/sbin/init":"/bin/bash", NULL };
   xexecv(cmd[0], cmd);
   return 0;
 }

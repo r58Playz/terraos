@@ -1,6 +1,20 @@
-#!/bash
+#!/bin/bash
 
 set +x
+
+export_args() {
+  # We trust our kernel command line explicitly.
+  local arg=
+  local key=
+  local val=
+  local acceptable_set='[A-Za-z0-9]_'
+  for arg in "$@"; do
+    key=$(echo "${arg%%=*}" | tr 'a-z' 'A-Z' | \
+                   tr -dc "$acceptable_set" '_')
+    val="${arg#*=}"
+    export "KERN_ARG_$key"="$val"
+  done
+}
 
 NOSCREENS=0
 MAIN_TTY="/dev/pts/0"
@@ -63,9 +77,7 @@ find_root() {
   local try kern_dev kern_num
   local root_dev 
   for try in $(seq 20); do
-    # crbug.com/463414: when the cgpt supports MTD (cgpt.bin), redirecting its
-    # output will get duplicated data.
-    kern_dev="$(cgpt find -1 -u $KERN_ARG_KERN_GUID 2>/dev/null | uniq)"
+    kern_dev="$(blkid --match-token "PARTUUID=$KERN_ARG_KERN_GUID" -o device 2>/dev/null )"
     kern_num=${kern_dev##[/a-z]*[/a-z]}
     root_dev="${kern_dev%${kern_num}}"
     if [ -b "$root_dev" ]; then
@@ -78,6 +90,14 @@ find_root() {
   done
   log "failed."
   return 1
+}
+
+find_by_part_type() {
+  lsblk -Aprn -o NAME,PARTUUID,PARTTYPE,PARTLABEL | sed '/\S\s\s\s/d' | grep -i "${1}"
+}
+
+find_usable_roots() {
+  find_by_part_type 3cb8e202-3b7e-47dd-8a3c-7ff2a13cfcec | awk '{if ($4) print $1":"$4; else print $1}'
 }
 
 ROOT_DEV="/"
@@ -152,7 +172,7 @@ action_boot_squash() {
   mount "${1}" /squashfs
 
   SQUASHFS_SIZE=$(du -sm /squashfs | cut -f 1)
-  PV_SIZE=$(( SQUASHFS_SIZE * 1024 * 1024 ))
+  PV_SIZE=$(du -sb /squashfs | cut -f 1)
   SQUASHFS_SIZE=$(( SQUASHFS_SIZE + 256 ))
 
   log "tmpfs size: ${SQUASHFS_SIZE}M"
@@ -160,7 +180,7 @@ action_boot_squash() {
 
   mount -t tmpfs -o size="${SQUASHFS_SIZE}M" tmpfs /newroot 
 
-  tar -cf - -C /squashfs . | pv -f -s "${PV_SIZE}" -w 96 | tar -xf - -C /newroot
+  tar -cf - -C /squashfs . | pv -fs "${PV_SIZE}" -w 96 | tar -xf - -C /newroot
 
   umount /squashfs
 
@@ -197,7 +217,7 @@ action_bash() {
   log "opening bash..."
   clear_tty ${MAIN_TTY}
   show_cursor ${MAIN_TTY}
-  setsid -c /bash -i
+  setsid -c /bin/bash -i
   hide_cursor ${MAIN_TTY}
 }
 
@@ -220,7 +240,7 @@ action_boot_squash_selector() {
 }
 
 action_boot_partition_selector() {
-  options=( "$(cgpt find -t rootfs | tr '\n' ' ')" )
+  options=( "$(find_usable_roots | tr '\n' ' ')" )
   local root_part="${ROOT_DEV}3"
   options=("${options[@]/$root_part}")
   enable_input "${MAIN_TTY}"
@@ -229,7 +249,7 @@ action_boot_partition_selector() {
   if [[ $selection != 'exit' ]]; then
     # bash quirk? idk why but i can't index the array with the var so i use awk instead
     # awk starts at 1 not 0 i'm so dumb 
-    part=$(echo -n "${options[*]}" | awk "{printf \$$((selection+1))}")
+    part=$(echo -n "${options[*]}" | awk "{printf \$$((selection+1))}" | sed "s/:.*//")
     action_boot_partition "${part}" 
   fi
 }
@@ -267,7 +287,7 @@ while true; do
           action_bash
           disable_input "${MAIN_TTY}"
           ;;
-	"3")
+	      "3")
           action_shutdown
       esac
       ;;

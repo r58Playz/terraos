@@ -23,6 +23,10 @@ if ! which truncate >/dev/null 2>/dev/null; then
   die "this program requires truncate"
 fi
 
+if ! which gcc >/dev/null 2>/dev/null; then
+  die "this program requires gcc"
+fi
+
 if test ! -f "${1}" && test -b "${1}"; then
   die "passing block devices to this script is unsupported"
 fi
@@ -34,7 +38,7 @@ get_partition() {
 
 SHIM_PATH="${1}"
 OUT_PATH="${2}"
-OUT_SIZE="64M"
+OUT_SIZE="128M"
 
 rm ${OUT_PATH}
 touch ${OUT_PATH}
@@ -54,7 +58,7 @@ echo "fe3a2a5d-4f32-41a7-b725-accc3285a309"
 echo "n"
 echo "3"
 echo ""
-echo "+10M"
+echo "+48M"
 echo "t"
 echo "3"
 echo "3cb8e202-3b7e-47dd-8a3c-7ff2a13cfcec"
@@ -74,10 +78,9 @@ mkdir mnt
 mount $(get_partition ${OUT_DEV} 3) mnt
 tar xf terrastage1.tar.zst -C mnt
 cp -a assets bootloader.sh mnt/
-cp bash-static mnt/bash
-gcc -static -o myswitchroot myswitchroot.c
-mv myswitchroot mnt/
-chmod +x mnt/myswitchroot mnt/bash mnt/bootloader.sh
+gcc -static -Os -o mnt/myswitchroot myswitchroot.c
+gcc -static -Os -o mnt/sbin/init bootloader.c 
+chmod +x mnt/myswitchroot mnt/bootloader.sh mnt/sbin/init
 umount mnt
 mount $(get_partition ${OUT_DEV} 1) mnt
 mkdir -p mnt/dev_image/etc/

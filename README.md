@@ -62,9 +62,7 @@ The `path_to_image` must be a path to a file.
 
 
 ## How do I build terrastage1.tar.zst?
-- Extract the shim kernel with binwalk until you get to the cpio archive.
-- Move `/init` to `/sbin/init`
-- Edit it so it instead runs `exec /bootloader.sh` after `setup_environment` in the `main` function
+- Use the buildroot config located in this repo.
 
 ## Crowdsourced list of compatibility
 If you get all features working on your TerraOS install, check here to make sure someone hasn't already posted data for your board and make a PR modifying this README.
