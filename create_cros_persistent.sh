@@ -1,31 +1,61 @@
 #!/bin/bash
+
+help(){
+  echo "Usage:
+    create_cros_persistent.sh <reven_recovery_image> <chromeos_recovery_image> <shim> <terraos_bootloader> <output_image>
+    create_cros_persistent.sh -h | --help"
+}
+
 die() {
   echo -e "\x1b[31m${1}\x1b[0m" >&2
   exit 1
 }
+
+die_help() {
+  echo -e "\x1b[31m${1}\x1b[0m" >&2
+  help
+  exit 1
+}
+
+has_arg(){
+  #example: has_arg "--help" "$@"
+  check=$1
+  shift
+  for arg in "$@"; do
+    if [ $arg == $check ]; then
+      return 0
+    fi
+  done
+  return 1
+}
+
+if has_arg "--help" "$@" || has_arg "-h" "$@"; then
+  help
+  exit 0
+fi
 
 if [ ${EUID} -ne 0 ]; then
   die "this script needs to be run as root"
 fi
 
 if [ $# -le 0 ]; then
-  die "you must pass an input reven (chromeOS flex) chromeos recovery image"
+  die_help "you must pass an input reven (chromeOS flex) chromeos recovery image"
 fi
 
 if [ $# -le 1 ]; then
-  die "you must pass an input board chromeos recovery image"
+  die_help "you must pass an input board chromeos recovery image"
 fi
 
 if [ $# -le 2 ]; then
-  die "you must pass an input RMA shim"
+  die_help "you must pass an input RMA shim"
 fi
 
 if [ $# -le 3 ]; then
-  die "you must pass a terraos bootloader"
+  die_help "you must pass a terraos bootloader"
 fi
 
 if [ $# -le 4 ]; then
-  die "you must pass an output image path"
+  die_help "you must pass an output image path"
 fi
 
 if test ! -f "${1}"; then

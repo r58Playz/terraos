@@ -1,34 +1,67 @@
+help(){
+  echo "Usage:
+    create_rootfs.sh <rootfs_path> <shim> <board_recovery_image> <systemd-chromiumos.pkg.tar.zst> <systemd-chromiumos-libs.pkg.tar.zst> <systemd-chromiumos-sysvcompat.pkg.tar.zst> [options]
+    create_rootfs.sh -h | --help
+
+Options:
+    --no-xfce  Skip installing xfce and related packages
+    --no-kill-frecon  Don't kill frecon during boot"
+}
+
 die() {
   echo -e "\x1b[31m${1}\x1b[0m" >&2
   exit 1
 }
+
+die_help() {
+  echo -e "\x1b[31m${1}\x1b[0m" >&2
+  help
+  exit 1
+}
+
+has_arg(){
+  #example: has_arg "--help" "$@"
+  check=$1
+  shift
+  for arg in "$@"; do
+    if [ $arg == $check ]; then
+      return 0
+    fi
+  done
+  return 1
+}
+
+if has_arg "--help" "$@" || has_arg "-h" "$@"; then
+  help
+  exit 0
+fi
 
 if [ ${EUID} -ne 0 ]; then
   die "this script must be run as root!"
 fi
 
 if [ $# -le 0 ]; then
-  die "you must pass an output rootfs path"
+  die_help "you must pass an output rootfs path"
 fi
 
 if [ $# -le 1 ]; then
-  die "you must pass an input RMA shim"
+  die_help "you must pass an input RMA shim"
 fi
 
 if [ $# -le 2 ]; then
-  die "you must pass an input board recovery image"
+  die_help "you must pass an input board recovery image"
 fi
 
 if [ $# -le 3 ]; then
-  die "you must pass the built systemd-chromiumos package"
+  die_help "you must pass the built systemd-chromiumos package"
 fi
 
 if [ $# -le 4 ]; then
-  die "you must pass the built systemd-chromiumos-libs package"
+  die_help "you must pass the built systemd-chromiumos-libs package"
 fi
 
 if [ $# -le 5 ]; then
-  die "you must pass the built systemd-chromiumos-sysvcompat package"
+  die_help "you must pass the built systemd-chromiumos-sysvcompat package"
 fi
 
 if ! which pacstrap >/dev/null 2>/dev/null; then
@@ -73,7 +106,13 @@ mkdir "${1}"
 
 if test -d mnt; then rm -r mnt; fi
 
-pacstrap -K "${1}" base linux-firmware networkmanager network-manager-applet xfce4 xfce4-goodies lightdm-gtk-greeter pulseaudio pavucontrol alsa-utils sof-firmware mesa-amber firefox noto-fonts which sudo vim neofetch || die "failed to bootstrap rootfs"
+PACKAGES="base linux-firmware networkmanager pulseaudio pavucontrol alsa-utils sof-firmware mesa-amber which sudo vim neofetch"
+
+if ! has_arg "--no-xfce" "$@"; then
+  PACKAGES="${PACKAGES} network-manager-applet xfce4 xfce4-goodies lightdm-gtk-greeter firefox noto-fonts"
+fi
+
+pacstrap -K "${1}" $PACKAGES || die "failed to bootstrap rootfs"
 cp "${4}" "${5}" "${6}" "${1}/" || die "failed to copy packages to root"
 mount --bind "${1}" "${1}" || die "failed to bindmount root"
 arch-chroot "${1}" pacman --noconfirm -Rdd systemd systemd-libs systemd-sysvcompat || die "failed to remove systemd"
@@ -83,6 +122,9 @@ arch-chroot "${1}" bash -c 'rm /var/cache/pacman/pkg/*' || die "failed to remove
 arch-chroot "${1}" useradd -m terraos || die "failed to add terraos user"
 arch-chroot "${1}" bash -c 'echo -e "terraos\nterraos" | passwd terraos' || die "failed to set terraos user password"
 arch-chroot "${1}" bash -c "echo 'terraos ALL=(ALL:ALL) NOPASSWD:ALL' >> /etc/sudoers" || die "failed to add terraos to sudoers"
+
+if ! has_arg "--no-kill-frecon" "$@"; then
+
 cat <<EOT > "${1}/etc/systemd/system/kill-frecon.service"
 [Unit]
 Description=Tell frecon to kill itself
@@ -94,7 +136,15 @@ ExecStart=/usr/bin/killall frecon-lite
 [Install]
 WantedBy=basic.target
 EOT
-arch-chroot "${1}" systemctl enable NetworkManager lightdm kill-frecon || die "failed to enable services"
+
+  arch-chroot "${1}" systemctl enable kill-frecon || die "failed to enable kill-frecon service"
+fi
+
+if ! has_arg "--no-xfce" "$@"; then
+  arch-chroot "${1}" systemctl enable lightdm || die "failed to enable lightdm service"
+fi
+
+arch-chroot "${1}" systemctl enable NetworkManager || die "failed to enable services"
 
 lsof -t +D "${1}" 2>/dev/null | xargs kill -9 
 rm -rf "${1}/etc/pacman.d/gnupg/S.*"
