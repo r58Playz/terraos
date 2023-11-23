@@ -56,7 +56,7 @@ makepkg -Cs --skipinteg --nocheck
 
 ## How do I build ChromeOS for TerraOS?
 ```
-sudo bash create_cros_persistent.sh <reven_recovery> <cros_recovery> <rma_shim> <path_to_image> 
+sudo bash create_cros_persistent.sh <reven_recovery> <cros_recovery> <rma_shim> <terraos_bootloader> <path_to_image> 
 ```
 The `path_to_image` must be a path to a file.
 
