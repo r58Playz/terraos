@@ -69,3 +69,6 @@ If you get all features working on your TerraOS install, check here to make sure
 
 ### Octopus
 All features work out of the box. Update your TerraOS rootfs, since this was fixed in a newer version.
+
+### Dedede
+All features appear to work out of the box on the latest version.
