@@ -69,3 +69,7 @@ If you get all features working on your TerraOS install, check here to make sure
 
 ### Octopus
 All features work out of the box. Update your TerraOS rootfs, since this was fixed in a newer version.
+
+### Dedede
+To fix WiFi, run `modprobe ccm`.
+Audio is broken.
