@@ -71,5 +71,5 @@ If you get all features working on your TerraOS install, check here to make sure
 All features work out of the box. Update your TerraOS rootfs, since this was fixed in a newer version.
 
 ### Dedede
-To fix WiFi, run `sudo modprobe ccm iwlmvm`.
+To fix WiFi, run `sudo modprobe -a ccm iwlmvm`.
 Audio is broken.
