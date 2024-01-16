@@ -18,6 +18,8 @@ The original rootfs of the RMA shim is already Linux, however it does not have f
    - Make sure the init program is at "/sbin/init" as that is the path that is executed.
    - TerraOS will autodetect all partitions on all GPT devices (including internal storage) with type "ChromeOS rootfs" and display them in a list that you can boot from.
 
+**Make sure to update `systemd-chromiumos` (on the AUR) alongside the rest of the system!**
+
 ## FAQ
 ### What works on the default rootfs?
 `make_rootfs.sh` copies firmware and modules from the RMA shim and ALSA kernel module configurations from the recovery image, so most if not all features should work out of the box. If features do not work, see [here](#crowdsourced-list-of-compatibility).
