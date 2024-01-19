@@ -68,6 +68,10 @@ if ! which xargs >/dev/null 2>/dev/null; then
   die "this program requires xargs"
 fi
 
+if ! which wget >/dev/null 2>/dev/null; then
+  die "this program requires wget"
+fi
+
 if test ! -f "${2}"; then
   die "${2}: No such file"
 fi
@@ -84,7 +88,8 @@ if ! has_arg "--no-xfce" "$@"; then
   PACKAGES="${PACKAGES} network-manager-applet xfce4 xfce4-goodies lightdm-gtk-greeter firefox noto-fonts"
 fi
 
-pacstrap -K "${1}" $PACKAGES || die "failed to bootstrap rootfs"
+pacstrap -McK "${1}" $PACKAGES || die "failed to bootstrap rootfs"
+wget -O- https://archlinux.org/mirrorlist/all/ | sed "s/^#//" | tee "${1}/etc/pacman.d/mirrorlist" || die "failed to get mirrorlist"
 cp *.pkg.tar.zst "${1}/" || die "failed to copy packages to root"
 mount --bind "${1}" "${1}" || die "failed to bindmount root"
 arch-chroot "${1}" pacman --noconfirm -Rdd systemd systemd-libs systemd-sysvcompat || die "failed to remove systemd"
@@ -119,7 +124,7 @@ fi
 arch-chroot "${1}" systemctl enable NetworkManager || die "failed to enable services"
 
 lsof -t +D "${1}" 2>/dev/null | xargs kill -9 
-rm -rf "${1}/etc/pacman.d/gnupg/S.*"
+rm -rf "${1}"/etc/pacman.d/gnupg/S.*
 
 umount -R "${1}" || die "failed to unmount root bindmount"
 
@@ -131,7 +136,7 @@ mount "${SHIM_DEV}p3" -o ro mnt || die "failed to mount shim"
 cp -a mnt/lib/modules  "${1}/lib/" || die "failed to copy modules"
 cp -a mnt/lib/firmware "${1}/lib/" || die "failed to copy firmware from shim"
 sync
-umount -f mnt || die "failed to unmount shim"
+umount -l mnt || die "failed to unmount shim"
 
 losetup -d ${SHIM_DEV} || die "failed to remove shim loop device"
 
@@ -140,7 +145,7 @@ RECO_DEV=$(losetup -Pf --show "${3}")
 mount "${RECO_DEV}p3" -o ro mnt || die "failed to mount recovery image"
 cp -a mnt/etc/modprobe.d/alsa* "${1}/etc/modprobe.d/" || die "failed to copy alsa drivers"
 sync
-umount -f mnt || die "failed to unmount recovery image"
+umount -l mnt || die "failed to unmount recovery image"
 
 git clone https://chromium.googlesource.com/chromiumos/third_party/linux-firmware fw --depth=1 -b master || die "failed to clone firmware"
 cp -r fw/* "${1}/lib/firmware/" || die "failed to copy firmware"

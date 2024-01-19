@@ -148,8 +148,10 @@ fn main() {
 
         utils::run_cmd("/sbin/modprobe", &["fuse"]).expect("Failed to modprobe fuse");
 
-        std::fs::write("/proc/sys/kernel/loadpin/enforce", "0")
-            .expect("Failed to disable load pinning");
+        match std::fs::write("/proc/sys/kernel/loadpin/enforce", "0") {
+            Ok(x) => Ok(x),
+            Err(_) => std::fs::write("/proc/sys/kernel/loadpin/enabled", "0")
+        }.expect("Failed to disable load pinning");
     }
 
     loop {

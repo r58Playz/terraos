@@ -1,3 +1,4 @@
+set -e
 if [ $# -le 1 ]; then
   echo "usage: build_all.sh shim.bin board_recovery.bin"
   exit 1
@@ -17,6 +18,6 @@ bash ${SCRIPT_DIR}/build_arch_only.sh arch_rootfs
   cd arch_rootfs;
   mksquashfs * ../terra_arch_gzip.squashfs
   mksquashfs * ../terra_arch_zstd.squashfs -comp zstd -Xcompression-level 22
-  tar cavf ../terra_arch.tar.gz *
-  tar cavf ../terra_arch.tar.zst
+  tar caf ../terra_arch.tar.gz *
+  tar caf ../terra_arch.tar.zst *
 )
