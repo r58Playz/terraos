@@ -105,8 +105,7 @@ checksum = "830d08ce1d1d941e6b30645f1a0eb5643013d835ce3779a5fc208261dbe10f55"
 [[package]]
 name = "libblkid-rs"
 version = "0.3.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0b43fd7c0de11a5209aff91fb625c118fc15173ae3dd0ac11e8f61a1b4d1a863"
+source = "git+https://github.com/r58Playz/libblkid-rs#0392ba193785ae8decefc1dea4ab7f691aa4181d"
 dependencies = [
  "either",
  "libblkid-rs-sys",
@@ -117,8 +116,7 @@ dependencies = [
 [[package]]
 name = "libblkid-rs-sys"
 version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "163068067b2faf263fb2fc3daff137b45608ee185044ca849dc41438aa38e23a"
+source = "git+https://github.com/r58Playz/libblkid-rs#0392ba193785ae8decefc1dea4ab7f691aa4181d"
 dependencies = [
  "bindgen",
  "cc",
