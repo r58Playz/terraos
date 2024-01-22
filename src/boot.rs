@@ -8,7 +8,7 @@ use std::fs;
 use std::io::Read;
 use std::os::linux::fs::MetadataExt;
 
-pub fn boot_from_partition(dev: String, termsize: tui::Point) {
+pub fn boot_from_partition(dev: String, termsize: tui::Point, init_cmd: &str) {
     let center = tui::get_center(tui::Point { row: 0, col: 0 }, termsize);
     tui::clear();
     tui::draw_box(tui::Point { row: 0, col: 0 }, termsize);
@@ -28,10 +28,10 @@ pub fn boot_from_partition(dev: String, termsize: tui::Point) {
     utils::run_cmd("/bin/mount", &[dev, "/newroot".to_string()])
         .expect("Failed to mount partition");
 
-    boot_from_newroot(termsize, center, false);
+    boot_from_newroot(termsize, center, false, init_cmd);
 }
 
-pub fn boot_from_squashfs(file: String, termsize: tui::Point) {
+pub fn boot_from_squashfs(file: String, termsize: tui::Point, init_cmd: &str) {
     let center = tui::get_center(tui::Point { row: 0, col: 0 }, termsize);
     tui::clear();
     tui::draw_box(tui::Point { row: 0, col: 0 }, termsize);
@@ -113,10 +113,10 @@ pub fn boot_from_squashfs(file: String, termsize: tui::Point) {
     )
     .expect("Failed to mount unionfs");
 
-    boot_from_newroot(termsize, center, true);
+    boot_from_newroot(termsize, center, true, init_cmd);
 }
 
-fn boot_from_newroot(termsize: tui::Point, center: tui::Point, keep_oldroot: bool) {
+fn boot_from_newroot(termsize: tui::Point, center: tui::Point, keep_oldroot: bool, init_cmd: &str) {
     tui::clear();
     tui::draw_box(tui::Point { row: 0, col: 0 }, termsize);
 
@@ -165,7 +165,24 @@ fn boot_from_newroot(termsize: tui::Point, center: tui::Point, keep_oldroot: boo
         unistd::pivot_root("/newroot", "/newroot/oldroot").expect("Failed to pivot_root");
     }
 
-    let cmdline = [CString::new("/sbin/init").expect("Failed to create cstr")];
+    unsafe {
+        if let Some(termios) = TERMIOS_BACKUP {
+            let _ = tui::destroy_term(termios);
+        }
+    }
+
+    tui::clear();
+    tui::draw_box(tui::Point { row: 0, col: 0 }, termsize);
+
+    tui::move_cursor(tui::Point {
+        row: center.row,
+        col: center.col - 7 / 2,
+    });
+    print!("Booting");
+    screens::common::show_usb_disclaimer(termsize);
+    tui::flush();
+
+    let cmdline = [CString::new(init_cmd).expect("Failed to create cstr")];
     unistd::execv(&cmdline[0], &cmdline).unwrap();
     panic!("failed to exec?");
 }

@@ -4,12 +4,10 @@ mod screens;
 mod tui;
 mod utils;
 
-use nix::sys::stat;
-use nix::unistd;
 use screens::main::BootOption;
-use std::fmt;
-use std::panic;
-use std::process::Command;
+
+use nix::{sys::stat, unistd};
+use std::{fmt, panic, process::Command, time::Duration};
 
 const VERSION: &str = "v2.0.0";
 
@@ -55,6 +53,8 @@ static mut TERMIOS_BACKUP: Option<termios::Termios> = None;
 
 fn main() {
     let mut dev = false;
+    let mut should_autoboot = false;
+    let mut autoboot_partition = 0;
     if let Some(arg) = std::env::args().nth(1) {
         match arg.as_str() {
             "disks" => {
@@ -70,13 +70,27 @@ fn main() {
             }
             "help" => {
                 println!("terraOS: Boot Linux-based operating systems from a RMA shim.");
-                println!("usage: terraos [disks|devices]");
+                println!("usage: terraos [disks|devices|autoboot]");
                 println!("no args: starts bootloader");
                 println!("disks: prints scanned disks");
                 println!("devices: prints scanned root devices w/ reason");
+                println!("autoboot: pass a partition number to boot it automatically");
                 return;
             }
             "dev" => dev = true,
+            "autoboot" => {
+                if let Some(arg) = std::env::args().nth(2) {
+                    if let Ok(arg) = arg.parse::<usize>() {
+                        should_autoboot = true;
+                        autoboot_partition = arg;
+                    } else {
+                        println!("autoboot: failed to parse partition number");
+                        return;
+                    }
+                } else {
+                    println!("autoboot: you must pass a partition number");
+                }
+            }
             &_ => {}
         }
     }
@@ -115,7 +129,9 @@ fn main() {
         println!("terraOS will attempt to start a shell in 3 seconds.");
         std::thread::sleep(std::time::Duration::from_secs(3));
         println!("terraOS will exit after this shell closes.");
-        let child = Command::new("/bin/bash").spawn();
+        let child = Command::new("/bin/setsid")
+            .args(["-c", "/bin/bash"])
+            .spawn();
         if let Ok(mut shell) = child {
             let _ = shell.wait();
         }
@@ -142,7 +158,10 @@ fn main() {
         // we use /bin/mount and not nix::mount::* because /bin/mount has autodetection of fstype
         utils::run_cmd(
             "/bin/mount",
-            &[format!("{}1", usb_dev), "/data".to_string()],
+            &[
+                utils::get_partition(&usb_dev, 1).expect("Failed to get partition 1 of disk"),
+                "/data".to_string(),
+            ],
         )
         .expect("Failed to mount data partition");
 
@@ -150,8 +169,33 @@ fn main() {
 
         match std::fs::write("/proc/sys/kernel/loadpin/enforce", "0") {
             Ok(x) => Ok(x),
-            Err(_) => std::fs::write("/proc/sys/kernel/loadpin/enabled", "0")
-        }.expect("Failed to disable load pinning");
+            Err(_) => std::fs::write("/proc/sys/kernel/loadpin/enabled", "0"),
+        }
+        .expect("Failed to disable load pinning");
+
+        if should_autoboot {
+            tui::clear();
+            tui::draw_box(tui::Point { row: 0, col: 0 }, termsize);
+
+            tui::move_cursor(tui::Point {
+                row: center.row,
+                col: center.col - 47 / 2,
+            });
+            print!("Autobooting in 5 seconds, press any key to exit");
+
+            screens::common::show_usb_disclaimer(termsize);
+
+            tui::flush();
+
+            if tui::read_char_timeout(Duration::new(5, 0)).is_none() {
+                boot::boot_from_partition(
+                    utils::get_partition(&usb_dev, autoboot_partition)
+                        .expect("Failed to get autoboot partition"),
+                    termsize,
+                    "/sbin/init",
+                );
+            }
+        }
     }
 
     loop {
@@ -167,7 +211,8 @@ fn main() {
             BootOption::BootPartition => screens::bootpartition::show_screen(termsize),
             BootOption::OpenShell => {
                 tui::destroy_term(termios).expect("Failed to destroy terminal.");
-                let mut child = Command::new("/bin/bash")
+                let mut child = Command::new("/bin/setsid")
+                    .args(["-c", "/bin/bash"])
                     .spawn()
                     .expect("Failed to start shell.");
                 child.wait().expect("Failed to wait for shell to finish.");

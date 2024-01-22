@@ -1,8 +1,10 @@
-use libc::ioctl;
-use libc::{c_ushort, STDOUT_FILENO, TIOCGWINSZ};
-use std::io::{stdin, stdout, Error, Read, Write};
-use std::os::fd::AsRawFd;
+use libc::{c_ushort, ioctl, STDOUT_FILENO, TIOCGWINSZ};
+use std::{
+    io::{stdin, stdout, Error, Read, Write},
+    os::fd::AsRawFd,
+};
 use termios::*;
+use timeout_readwrite::reader::TimeoutReader;
 
 const BOX_TOPLEFT: &str = "┌";
 const BOX_BTMLEFT: &str = "└";
@@ -10,7 +12,7 @@ const BOX_TOPRIGHT: &str = "┐";
 const BOX_BTMRIGHT: &str = "┘";
 const BOX_HORIZLINE: &str = "─";
 const BOX_VERTLINE: &str = "│";
-const PROGRESS_CHARS: &[&str] = &["▎","▌","▊","█"];
+const PROGRESS_CHARS: &[&str] = &["▎", "▌", "▊", "█"];
 
 pub fn setup_term() -> Result<Termios, Error> {
     let stdin_fd = stdin().as_raw_fd();
@@ -172,4 +174,12 @@ pub fn get_center(p1: Point, p2: Point) -> Point {
 
 pub fn read_char() -> char {
     stdin().bytes().next().unwrap().unwrap() as char
+}
+
+pub fn read_char_timeout(duration: std::time::Duration) -> Option<char> {
+    TimeoutReader::new(stdin(), duration)
+        .bytes()
+        .next()
+        .and_then(|x| x.ok())
+        .map(char::from)
 }

@@ -13,7 +13,7 @@ pub fn show_screen(termsize: tui::Point) {
     print!("Searching for rootfs partitions");
 
     screens::common::show_usb_disclaimer(termsize);
-    screens::common::show_keybinds(termsize);
+    screens::common::show_boot_keybinds(termsize);
 
     tui::flush();
 
@@ -36,6 +36,7 @@ pub fn show_screen(termsize: tui::Point) {
 
     let mut selected: usize = 0;
     let mut selected_option = false;
+    let mut init_cmd = "/sbin/init";
     loop {
         tui::draw_box(
             tui::Point { row: 6, col: 4 },
@@ -46,6 +47,7 @@ pub fn show_screen(termsize: tui::Point) {
         );
 
         screens::common::show_usb_disclaimer(termsize);
+        screens::common::show_boot_keybinds(termsize);
 
         show_selector(
             tui::Point { row: 7, col: 5 },
@@ -69,6 +71,11 @@ pub fn show_screen(termsize: tui::Point) {
                 selected_option = true;
                 break;
             }
+            'd' => {
+                selected_option = true;
+                init_cmd = "/bin/bash";
+                break;
+            }
             '\u{7f}' => break,
             '\x08' => break,
             _ => {}
@@ -76,6 +83,6 @@ pub fn show_screen(termsize: tui::Point) {
     }
 
     if selected_option {
-        boot::boot_from_partition(parts[selected].partition.clone(), termsize);
+        boot::boot_from_partition(parts[selected].partition.clone(), termsize, init_cmd);
     }
 }

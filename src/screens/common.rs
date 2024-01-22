@@ -9,3 +9,8 @@ pub fn show_keybinds(termsize: tui::Point) {
     tui::move_cursor(tui::Point {row: termsize.row - 1, col: 2});
     print!("Use the arrow keys to move, ENTER to select, and BACKSPACE to go back.");
 }
+
+pub fn show_boot_keybinds(termsize: tui::Point) {
+    tui::move_cursor(tui::Point {row: termsize.row - 1, col: 2});
+    print!("Use the arrow keys to move, ENTER to boot, D to boot into a shell, and BACKSPACE to go back.");
+}

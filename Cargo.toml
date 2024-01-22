@@ -11,3 +11,4 @@ libblkid-rs = { git = "https://github.com/r58Playz/libblkid-rs" }
 libc = "0.2.150"
 nix = { version = "0.27.1", features = ["mount", "fs", "process"] }
 termios = "0.3.3"
+timeout-readwrite = "0.3.3"
