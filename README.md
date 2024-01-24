@@ -22,7 +22,7 @@ The original rootfs of the RMA shim is already Linux, however it does not have f
 
 ## FAQ
 ### What works on the default rootfs?
-`make_rootfs.sh` copies firmware and modules from the RMA shim and ALSA kernel module configurations from the recovery image, so most if not all features should work out of the box. If features do not work, see [here](#crowdsourced-list-of-compatibility).
+`create_rootfs.sh` copies firmware and modules from the RMA shim and ALSA kernel module configurations from the recovery image, so most if not all features should work out of the box. If features do not work, see [here](#crowdsourced-list-of-compatibility).
 - Systemd
 - Graphics
 - 3D Acceleration
