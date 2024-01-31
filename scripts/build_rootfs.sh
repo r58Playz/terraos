@@ -1,7 +1,7 @@
 help(){
   echo "Usage:
-    create_rootfs.sh <rootfs_path> <shim> <board_recovery_image> [options]
-    create_rootfs.sh -h | --help
+    build_rootfs.sh <rootfs_path> <shim> <board_recovery_image> [options]
+    build_rootfs.sh -h | --help
 
 Options:
     --no-xfce  Skip installing xfce and related packages
@@ -99,6 +99,11 @@ arch-chroot "${1}" bash -c 'rm /var/cache/pacman/pkg/*' || die "failed to remove
 arch-chroot "${1}" useradd -m terraos || die "failed to add terraos user"
 arch-chroot "${1}" bash -c 'echo -e "terraos\nterraos" | passwd terraos' || die "failed to set terraos user password"
 arch-chroot "${1}" bash -c "echo 'terraos ALL=(ALL:ALL) NOPASSWD:ALL' >> /etc/sudoers" || die "failed to add terraos to sudoers"
+arch-chroot "${1}" bash -c "ln -sf /usr/share/zoneinfo/America/Los_Angeles /etc/localtime" || die "failed to set time" 
+sed -i "s/#en_US.UTF-8/en_US.UTF-8/" "${1}/etc/locale.gen" || die "failed to set locale" 
+arch-chroot "${1}" locale-gen || die "failed to generate locale files"
+echo "LANG=en_US.UTF-8" > "${1}/etc/locale.conf"
+echo "terraos" > "${1}/etc/hostname"
 
 if ! has_arg "--no-kill-frecon" "$@"; then
 
@@ -154,3 +159,8 @@ rm -r fw || die "failed to remove firmware"
 losetup -d ${RECO_DEV} || die "failed to remove recovery image loop device"
 
 rm -r mnt || die "failed to remove temporary mountpoint"
+
+# it may already exist
+mkdir -p "${1}/etc/modules-load.d" || true
+echo "iwlmvm" >> "${1}/etc/modules-load.d/dedede-wifi.conf"
+echo "ccm" >> "${1}/etc/modules-load.d/dedede-wifi.conf"

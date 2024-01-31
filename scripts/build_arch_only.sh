@@ -19,6 +19,8 @@ echo "3cb8e202-3b7e-47dd-8a3c-7ff2a13cfcec"
 echo "w"
 ) | fdisk "${OUT_DEV}"
 
+cgpt add -i 4 -l terra_arch "${OUT_DEV}"
+
 mkfs.ext4 "${OUT_DEV}"p4
 
 mkdir mnt
