@@ -13,8 +13,8 @@ You'll need to create a partition with the type `chromeOS rootfs` (`3cb8e202-3b7
 1. Clone this repo.
 2. Create a build directory.
 3. Run `bash ../scripts/build_stage1.sh <defconfig>`
-  - Use `terraos` as the defconfig if building for x86_64 chromebooks.
-  - Use `terraos_jacuzzi` as the defconfig if building for `jacuzzi` board chromebooks. Support for `jacuzzi` board chromebooks is experimental and may not work, however.
+  1. Use `terraos` as the defconfig if building for x86_64 chromebooks.
+  2. Use `terraos_jacuzzi` as the defconfig if building for `jacuzzi` board chromebooks. Support for `jacuzzi` board chromebooks is experimental and may not work, however.
 4. Run `bash ../scripts/build_aur_packages.sh`
 5. Run `bash ../scripts/build_all.sh <shim.bin> <board_recovery.bin> <reven_recovery.bin>` replacing `<shim.bin>` with the path to a shim for your board, `<board_recovery.bin>` with the path to a recovery image for your board, and `<reven_recovery.bin>` with the path to a chromeOS flex recovery of the same version. 
 
