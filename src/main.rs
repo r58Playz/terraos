@@ -145,25 +145,24 @@ fn main() {
             None => panic!("Failed to get kernel uuid from kernel commandline."),
         };
 
-        let kern_part = disks::search_for_tag("PARTUUID".to_string(), kern_guid.clone())
-            .unwrap_or_else(|_| {
+        let kern_part =
+            disks::search_for_tag("PARTUUID".into(), kern_guid.clone()).unwrap_or_else(|_| {
                 panic!("Failed to find kernel partition from GUID: {:?}", kern_guid)
             });
 
         let usb_dev = disks::get_disk_from_part(&kern_part)
             .expect("Failed to get disk from kernel partition");
+        let stateful_part =
+            utils::get_partition(&usb_dev, 1).expect("Failed to get partition 1 of disk");
+
+        utils::run_fsck(&stateful_part)
+            .expect("Failed to check data partition for errors");
 
         unistd::mkdir("/data", stat::Mode::S_IRWXU)
             .expect("Failed to create data partition mountpoint");
         // we use /bin/mount and not nix::mount::* because /bin/mount has autodetection of fstype
-        utils::run_cmd(
-            "/bin/mount",
-            &[
-                utils::get_partition(&usb_dev, 1).expect("Failed to get partition 1 of disk"),
-                "/data".to_string(),
-            ],
-        )
-        .expect("Failed to mount data partition");
+        utils::run_cmd("/bin/mount", &[stateful_part, "/data".into()])
+            .expect("Failed to mount data partition");
 
         utils::run_cmd("/sbin/modprobe", &["fuse"]).expect("Failed to modprobe fuse");
 

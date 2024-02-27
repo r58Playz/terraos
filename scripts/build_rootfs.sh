@@ -82,7 +82,7 @@ mkdir "${1}"
 
 if test -d mnt; then rm -r mnt; fi
 
-PACKAGES="base networkmanager pulseaudio pavucontrol alsa-utils mesa-amber which sudo vim neofetch base-devel"
+PACKAGES="base networkmanager pulseaudio pavucontrol alsa-utils mesa-amber which sudo vim neofetch base-devel cloud-utils util-linux"
 
 if ! has_arg "--no-xfce" "$@"; then
   PACKAGES="${PACKAGES} network-manager-applet xfce4 xfce4-goodies lightdm-gtk-greeter firefox noto-fonts"
@@ -105,8 +105,31 @@ arch-chroot "${1}" locale-gen || die "failed to generate locale files"
 echo "LANG=en_US.UTF-8" > "${1}/etc/locale.conf"
 echo "terraos" > "${1}/etc/hostname"
 
-if ! has_arg "--no-kill-frecon" "$@"; then
+cat <<"EOT" > "${1}/usr/local/bin/expand-root.sh"
+set -xe
+PART=$(findmnt -no SOURCE /)
+DEV=$(lsblk -npo PKNAME ${PART})
+echo "${DEV} ${PART} ${PART#${DEV}}"
+echo "w" | fdisk ${DEV}
+growpart ${DEV} ${PART#${DEV}}
+resize2fs ${PART}
+EOT
 
+cat <<EOT > "${1}/etc/systemd/system/expand-root.service"
+[Unit]
+Description=Resize root on first boot
+ConditionPathExists=!/usr/local/bin/expand-root.completed
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/bash /usr/local/bin/expand-root.sh
+ExecStartPost=/usr/bin/touch /usr/local/bin/expand-root.completed
+
+[Install]
+WantedBy=basic.target
+EOT
+
+if ! has_arg "--no-kill-frecon" "$@"; then
 cat <<EOT > "${1}/etc/systemd/system/kill-frecon.service"
 [Unit]
 Description=Tell frecon to kill itself
@@ -118,7 +141,6 @@ ExecStart=/usr/bin/killall frecon-lite
 [Install]
 WantedBy=basic.target
 EOT
-
   arch-chroot "${1}" systemctl enable kill-frecon || die "failed to enable kill-frecon service"
 fi
 

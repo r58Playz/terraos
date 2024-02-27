@@ -23,10 +23,12 @@ pub fn boot_from_partition(dev: String, termsize: tui::Point, init_cmd: &str) {
 
     tui::flush();
 
+    utils::run_fsck(&dev)
+        .expect("Failed to check partition for errors");
+
     unistd::mkdir("/newroot", stat::Mode::S_IRWXU).expect("Failed to create newroot");
     // we use /bin/mount and not nix::mount::* because /bin/mount has autodetection of fstype
-    utils::run_cmd("/bin/mount", &[dev, "/newroot".to_string()])
-        .expect("Failed to mount partition");
+    utils::run_cmd("/bin/mount", &[dev, "/newroot".into()]).expect("Failed to mount partition");
 
     boot_from_newroot(termsize, center, false, init_cmd);
 }

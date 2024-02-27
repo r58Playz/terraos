@@ -1,67 +1,36 @@
 # terraOS
 Boot Linux-based operating systems from a RMA shim.
 
+![Image of terraOS bootloader](preview.png)
+
+## How does it work?
+terraOS utilizes a bug in chromebook RMA shims, which are bootable recovery images that are used for running diagnostic utilities, to chainload regular Linux distros by replacing the rootfs. Replacing the rootfs entirely doesn't work however, since the RMA shim boots in an environment made specifically for those diagnostic utilities. terraOS is made to get around that. 
+
+## How do I add my own distros?
+You'll need to create a partition with the type `chromeOS rootfs` (`3cb8e202-3b7e-47dd-8a3c-7ff2a13cfcec`) and bootstrap your distro in the root of an ext4 filesystem on that partition. Place any squashfs files in the root of the first partition.
+
 ## How do I use it?
-- Clone this repository.
-- Build the bootloader by running `sudo bash build.sh <input RMA shim> <output image path>`.
-- Flash it to a USB.
-- If you want to boot from squashfs, expand the 1st partition.
-- Copy all squashfses you want to boot from into the 1st partition.
-- For each rootfs you want to use with persistence, do these steps:
-   - Create a new partition with type "ChromeOS rootfs" via fdisk or your favourite partitioning utility.
-   - Format the partition.
-   - Extract the tarball or bootstrap your rootfs as root into the root of the partition. If you are using `cp`, **make sure to use the `a` flag to preserve permissions and users**. To build the default rootfs, see [here](#how-do-i-build-the-terraos-rootfs).
-   - Make sure the init program is at "/sbin/init" as that is the path that is executed.
-   - TerraOS will autodetect all partitions on all GPT devices (including internal storage) with type "ChromeOS rootfs" and display them in a list that you can boot from.
+1. Clone this repo.
+2. Create a build directory.
+3. Run `bash ../scripts/build_stage1.sh <defconfig>`
+  - Use `terraos` as the defconfig if building for x86_64 chromebooks.
+  - Use `terraos_jacuzzi` as the defconfig if building for `jacuzzi` board chromebooks. Support for `jacuzzi` board chromebooks is experimental and may not work, however.
+4. Run `bash ../scripts/build_aur_packages.sh`
+5. Run `bash ../scripts/build_all.sh <shim.bin> <board_recovery.bin> <reven_recovery.bin>` replacing `<shim.bin>` with the path to a shim for your board, `<board_recovery.bin>` with the path to a recovery image for your board, and `<reven_recovery.bin>` with the path to a chromeOS flex recovery of the same version. 
 
-## FAQ
-### What works on the default rootfs?
-`make_rootfs.sh` copies firmware and modules from the RMA shim and ALSA kernel module configurations from the recovery image, so most if not all features should work out of the box. If features do not work, see [here](#crowdsourced-list-of-compatibility).
-- Systemd
-- Graphics
-- 3D Acceleration
-- Audio (this is board dependent)
-- WiFi (this is board dependent)
+This will place a built bootloader image, squashfs and tarballs of the arch rootfs, a bootloader image with the arch rootfs, a bootloader image with terraOS chromeOS, and a bootloader image with both the arch rootfs and terraOS chromeOS in the build directory.
 
-### Can I use a different distro?
-Yes, you will need to either use a non-systemd distro or manually compile systemd with the [chromiumos patches](https://aur.archlinux.org/cgit/aur.git/tree/0002-Disable-mount_nofollow-for-ChromiumOS-kernels.patch?h=systemd-chromiumos). Then you can just follow the regular instructions and install your distro instead.
+## How do I install to internal storage?
+1. Boot into terraOS and copy over the image you used to flash your terraOS drive.
+2. Use GParted or `sudo fdisk -l` to find your internal storage. Replace `/dev/mmcblkX` in the rest of the steps with the internal storage device.
+3. Run `sudo dd if=<image> of=/dev/mmcblkX status=progress bs=16M oflag=direct` to write the image to the internal storage. Replace `<image>` with the path to the image you copied.
 
-### Can I use this without a USB in?
-Yes, you will need to create a "ChromeOS rootfs" partition on the internal storage and copy your rootfs there. In the future, there will be support for copying the filesystem to RAM.
+Alternatively you can manually create a `chromeOS rootfs` type partition via `parted` or `fdisk`, format as ext4, and copy over the rootfs.
 
-### Where is my WiFi, audio, etc?!
-Run `dmesg` and find the proper firmware for your board. Download it and manually add it to the rootfs. If you are using some exotic device it may not be in the RMA shim kernel. In that case you will have to compile the exact kernel version in the shim and then the module.
+## What doesn't work?
+- Deep sleep (kernel issue)
+- Swap (disabled in kernel)
+- Audio on dedede (firmware bug)
 
-## How do I build the TerraOS rootfs?
-**The password for the `terraos` user is `terraos`.**
-```
-sudo bash create_rootfs.sh <rootfs path - needs to be empty> <shim> <board recovery image> <systemd-chromiumos.pkg.tar.zst> <systemd-chromiumos-libs.pkg.tar.zst> <systemd-chromiumos-sysvcompat.pkg.tar.zst>
-```
-
-Then you can add extra firmware such as the ones from the crowdsourced list of firmware needed for WiFi below.
-
-To build systemd-chromiumos:
-```
-git clone https://aur.archlinux.org/systemd-chromiumos
-cd systemd-chromiumos
-makepkg -Cs --skipinteg --nocheck
-```
-
-`sudo tar cajvf ../<filename> *` seems to create a sane tarball of the generated rootfses.
-`sudo mksquashfs * ../<filename> -comp gzip` creates a squashfs image of the generated rootfs.
-
-## How do I build ChromeOS for TerraOS?
-```
-sudo bash create_cros_persistent.sh <reven_recovery> <cros_recovery> <rma_shim> <path_to_image> 
-```
-The `path_to_image` must be a path to a file.
-
-
-## How do I build terrastage1.tar.zst?
-- Use the buildroot config located in this repo.
-
-## Crowdsourced list of compatibility
-If you get all features working on your TerraOS install, check here to make sure someone hasn't already posted data for your board and make a PR modifying this README.
-
-### Octopus
-All features work out of the box. Update your TerraOS rootfs, since this was fixed in a newer version.
+## Can I use a different distro?
+Yes, you will need to either use a non-systemd distro or manually compile systemd with the [chromiumos patches](https://aur.archlinux.org/cgit/aur.git/tree/0002-Disable-mount_nofollow-for-ChromiumOS-kernels.patch?h=systemd-chromiumos).

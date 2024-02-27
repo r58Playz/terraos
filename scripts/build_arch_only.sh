@@ -3,6 +3,11 @@ if [ ${EUID} -ne 0 ]; then
   exit 1
 fi
 
+if [ $# -lt 1 ]; then
+  echo "usage: build_arch_only.sh <rootfs_dir>"
+  exit 1
+fi
+
 cp bootloader.img terra_arch.img
 truncate -s 4G terra_arch.img
 OUT_DEV=$(losetup -Pf --show terra_arch.img)

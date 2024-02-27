@@ -1,7 +1,7 @@
 help(){
   echo "Usage:
-    build.sh <shim> <output_filename>
-    build.sh -h | --help
+    build_bootloader.sh <shim> <output_filename>
+    build_bootloader.sh -h | --help
 
 Builds the TerraOS bootloader."
 }

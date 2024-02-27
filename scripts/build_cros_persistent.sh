@@ -2,8 +2,8 @@
 
 help(){
   echo "Usage:
-    create_cros_persistent.sh <reven_recovery_image> <chromeos_recovery_image> <shim> <terraos_bootloader> <output_image>
-    create_cros_persistent.sh -h | --help"
+    build_cros_persistent.sh <reven_recovery_image> <chromeos_recovery_image> <shim> <terraos_bootloader> <output_image>
+    build_cros_persistent.sh -h | --help"
 }
 
 die() {
