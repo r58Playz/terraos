@@ -27,10 +27,15 @@ This will place a built bootloader image, squashfs and tarballs of the arch root
 
 Alternatively you can manually create a `chromeOS rootfs` type partition via `parted` or `fdisk`, format as ext4, and copy over the rootfs.
 
-## What doesn't work?
+## FAQ
+
+### Can I automatically boot into a partition?
+Yes, edit `/sbin/init` on the terraOS boootloader partition and pass terraOS the arguments `autoboot <partnum>` where `<partnum>` is a partition number on the same disk as terraOS.
+
+### What doesn't work?
 - Deep sleep (kernel issue)
 - Swap (disabled in kernel)
 - Audio on dedede (firmware bug)
 
-## Can I use a different distro?
+### Can I use a different distro?
 Yes, you will need to either use a non-systemd distro or manually compile systemd with the [chromiumos patches](https://aur.archlinux.org/cgit/aur.git/tree/0002-Disable-mount_nofollow-for-ChromiumOS-kernels.patch?h=systemd-chromiumos).
