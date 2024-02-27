@@ -20,6 +20,8 @@ You'll need to create a partition with the type `chromeOS rootfs` (`3cb8e202-3b7
 
 This will place a built bootloader image, squashfs and tarballs of the arch rootfs, a bootloader image with the arch rootfs, a bootloader image with terraOS chromeOS, and a bootloader image with both the arch rootfs and terraOS chromeOS in the build directory.
 
+The default arch rootfs user is `terraos` and its password is `terraos`.
+
 ## How do I install to internal storage?
 1. Boot into terraOS and copy over the image you used to flash your terraOS drive.
 2. Use GParted or `sudo fdisk -l` to find your internal storage. Replace `/dev/mmcblkX` in the rest of the steps with the internal storage device.
