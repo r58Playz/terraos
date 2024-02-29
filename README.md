@@ -32,7 +32,7 @@ Alternatively you can manually create a `chromeOS rootfs` type partition via `pa
 ## FAQ
 
 ### Can I automatically boot into a partition?
-Yes, edit `/sbin/init` on the terraOS boootloader partition and pass terraOS the arguments `autoboot <partnum>` where `<partnum>` is a partition number on the same disk as terraOS.
+Yes, edit `/sbin/init` on the terraOS bootloader partition and pass terraOS the arguments `autoboot <partnum>` where `<partnum>` is a partition number on the same disk as terraOS.
 
 ### What doesn't work?
 - Deep sleep (kernel issue)
