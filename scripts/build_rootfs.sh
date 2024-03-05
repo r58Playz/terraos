@@ -128,6 +128,7 @@ ExecStartPost=/usr/bin/touch /usr/local/bin/expand-root.completed
 [Install]
 WantedBy=basic.target
 EOT
+arch-chroot "${1}" systemctl enable expand-root || die "failed to enable expand-root service"
 
 if ! has_arg "--no-kill-frecon" "$@"; then
 cat <<EOT > "${1}/etc/systemd/system/kill-frecon.service"
